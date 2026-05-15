@@ -1,5 +1,15 @@
 [
   {
+    "id": 1778854433101,
+    "action": "user_registered",
+    "message": {
+      "uz": "Foydalanuvchi ro'yxatdan o'tdi admin",
+      "ru": "Пользователь зарегистрирован admin",
+      "en": "User registered admin"
+    },
+    "created_at": "2026-05-15T14:13:53.101200+00:00"
+  },
+  {
     "id": 1778825222770,
     "action": "user_login",
     "message": {
@@ -48,15 +58,5 @@
       "en": "User logged in admin"
     },
     "created_at": "2026-05-15T05:12:13.684120+00:00"
-  },
-  {
-    "id": 1778746263304,
-    "action": "user_login",
-    "message": {
-      "uz": "Foydalanuvchi tizimga kirdi zulfiya9494",
-      "ru": "Пользователь вошел в систему zulfiya9494",
-      "en": "User logged in zulfiya9494"
-    },
-    "created_at": "2026-05-14T08:11:03.304954+00:00"
   }
 ]
