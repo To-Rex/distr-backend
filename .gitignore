@@ -11,4 +11,4 @@ wheels/
 
 alembic/
 alembic.ini
-static/
+static/config/config_notification.json
