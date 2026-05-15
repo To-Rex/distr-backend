@@ -1,0 +1,2 @@
+
+from sqladmin import ModelView
