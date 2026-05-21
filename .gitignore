@@ -13,3 +13,5 @@ alembic/
 alembic.ini
 
 backups/
+
+.env
