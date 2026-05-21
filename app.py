@@ -36,7 +36,6 @@ mimetypes.add_type(
 #     print("[+] All tables created")
 #     yield
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # 1. Database logic
