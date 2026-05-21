@@ -11,6 +11,7 @@ from .system_monitor import routes as system_monitor_routes
 from .user import routes as user_routes
 from .user import user_manager_routes as user_manager_routes
 from .working_session_tracking import routes as working_session_routes
+from .database_backup import routes as database_backup_routes
 
 main_router = APIRouter(
     prefix="/api/v1",
@@ -27,3 +28,4 @@ main_router.include_router(device_routes.router)
 main_router.include_router(system_monitor_routes.router)
 main_router.include_router(activity_routes.router)
 main_router.include_router(alembic_version_routes.router)
+main_router.include_router(database_backup_routes.router)
