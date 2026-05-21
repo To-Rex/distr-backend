@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sqladmin.templating import Jinja2Templates
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import Response
+from starlette.responses import RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from apps.user.admin import UserAdmin
 from apps.company.admin import CompanyAdmin, SecurityKeyAdmin
@@ -97,6 +97,10 @@ admin.add_view(WorkingSessionAdmin)
 admin.add_view(NotificationAdmin)
 admin.add_view(NotificationUserStatusAdmin)
 admin.add_view(AlembicVersionAdmin)
+
+@app.get("/")
+async def redirect_root():
+    return RedirectResponse(url="https://hr.mxsoft.uz/")
 
 # admin
 app.include_router(main_router)
