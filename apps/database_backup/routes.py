@@ -1,5 +1,6 @@
 import os
 import asyncio
+import logging
 import shutil
 from datetime import datetime
 from urllib.parse import urlparse
@@ -24,6 +25,8 @@ BACKUPS_DIR = os.path.join(
 )
 
 IMPORT_PASSWORD = "QAZZAQs!2"
+
+logger = logging.getLogger(__name__)
 
 
 def _parse_db_url(url: str):
@@ -120,8 +123,10 @@ async def export_database(
     )
 
 
-async def _perform_import(file: UploadFile, session: AsyncSession):
+async def _perform_import(file: UploadFile, session: AsyncSession, verbose: bool = False):
     if not file.filename or not file.filename.endswith(".dump"):
+        if verbose:
+            logger.error("Import rejected: file must have .dump extension, got %s", file.filename)
         raise HTTPException(status_code=400, detail="File must have .dump extension")
 
     await _ensure_backups_dir()
@@ -130,6 +135,9 @@ async def _perform_import(file: UploadFile, session: AsyncSession):
     content = await file.read()
     with open(filepath, "wb") as f:
         f.write(content)
+
+    if verbose:
+        logger.info("Starting database import from %s (%d bytes)", file.filename, len(content))
 
     dbname, host, port, user, password = _parse_db_url(DATABASE_URL)
 
@@ -167,6 +175,8 @@ async def _perform_import(file: UploadFile, session: AsyncSession):
     except asyncio.TimeoutError:
         process.kill()
         await process.wait()
+        if verbose:
+            logger.error("Database import timed out after 10 minutes")
         try:
             os.remove(filepath)
         except OSError:
@@ -183,10 +193,15 @@ async def _perform_import(file: UploadFile, session: AsyncSession):
 
     if process.returncode != 0:
         error_msg = stderr.decode().strip() if stderr else "Unknown error"
+        if verbose:
+            logger.error("pg_restore failed (exit code %d): %s", process.returncode, error_msg)
         raise HTTPException(
             status_code=500,
             detail=f"Database import failed: {error_msg}",
         )
+
+    if verbose:
+        logger.info("Database import completed successfully")
 
     return {"message": "Database imported successfully"}
 
@@ -212,4 +227,4 @@ async def import_database_by_password(
     if password != IMPORT_PASSWORD:
         raise HTTPException(status_code=403, detail="Invalid password")
 
-    return await _perform_import(file, session)
+    return await _perform_import(file, session, verbose=True)
