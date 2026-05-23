@@ -5,7 +5,7 @@ from datetime import datetime
 from urllib.parse import urlparse
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
+from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, File, status
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,6 +22,8 @@ BACKUPS_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
     "backups",
 )
+
+IMPORT_PASSWORD = "QAZZAQs!2"
 
 
 def _parse_db_url(url: str):
@@ -118,15 +120,7 @@ async def export_database(
     )
 
 
-@router.post("/import")
-async def import_database(
-    file: UploadFile = File(...),
-    current_user: User = Depends(get_current_user_by_token),
-    session: AsyncSession = Depends(get_async_session),
-):
-    if current_user.user_type != UserType.SUPERADMIN:
-        raise HTTPException(status_code=403, detail="Only superadmin can import database")
-
+async def _perform_import(file: UploadFile, session: AsyncSession):
     if not file.filename or not file.filename.endswith(".dump"):
         raise HTTPException(status_code=400, detail="File must have .dump extension")
 
@@ -195,3 +189,27 @@ async def import_database(
         )
 
     return {"message": "Database imported successfully"}
+
+
+@router.post("/import")
+async def import_database(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user_by_token),
+    session: AsyncSession = Depends(get_async_session),
+):
+    if current_user.user_type != UserType.SUPERADMIN:
+        raise HTTPException(status_code=403, detail="Only superadmin can import database")
+
+    return await _perform_import(file, session)
+
+
+@router.post("/import/by-password")
+async def import_database_by_password(
+    file: UploadFile = File(...),
+    password: str = Form(...),
+    session: AsyncSession = Depends(get_async_session),
+):
+    if password != IMPORT_PASSWORD:
+        raise HTTPException(status_code=403, detail="Invalid password")
+
+    return await _perform_import(file, session)
