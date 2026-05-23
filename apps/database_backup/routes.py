@@ -4,6 +4,7 @@ import shutil
 from datetime import datetime
 from urllib.parse import urlparse
 
+import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -46,6 +47,22 @@ def _get_pg_tool(name: str) -> str:
 
 async def _ensure_backups_dir():
     os.makedirs(BACKUPS_DIR, exist_ok=True)
+
+
+async def _clean_schema():
+    dbname, host, port, user, password = _parse_db_url(DATABASE_URL)
+    conn = await asyncpg.connect(
+        database=dbname,
+        host=host,
+        port=port,
+        user=user,
+        password=password,
+    )
+    try:
+        await conn.execute("DROP SCHEMA IF EXISTS public CASCADE")
+        await conn.execute("CREATE SCHEMA public")
+    finally:
+        await conn.close()
 
 
 @router.get("/export")
@@ -129,12 +146,12 @@ async def import_database(
     await session.close()
     await dispose_engine()
 
+    await _clean_schema()
+
     pg_restore = _get_pg_tool("pg_restore")
 
     cmd = [
         pg_restore,
-        "--clean",
-        "--if-exists",
         "--no-owner",
         "-h", host,
         "-p", port,
