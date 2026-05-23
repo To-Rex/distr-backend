@@ -1,5 +1,25 @@
 [
   {
+    "id": 1779567350023,
+    "action": "user_login",
+    "message": {
+      "uz": "Foydalanuvchi tizimga kirdi admin",
+      "ru": "Пользователь вошел в систему admin",
+      "en": "User logged in admin"
+    },
+    "created_at": "2026-05-23T20:15:50.023355+00:00"
+  },
+  {
+    "id": 1779567343365,
+    "action": "user_registered",
+    "message": {
+      "uz": "Foydalanuvchi ro'yxatdan o'tdi admin",
+      "ru": "Пользователь зарегистрирован admin",
+      "en": "User registered admin"
+    },
+    "created_at": "2026-05-23T20:15:43.365642+00:00"
+  },
+  {
     "id": 1779567079840,
     "action": "user_login",
     "message": {
@@ -38,25 +58,5 @@
       "en": "User logged in admin"
     },
     "created_at": "2026-05-21T17:29:24.027104+00:00"
-  },
-  {
-    "id": 1779384262918,
-    "action": "user_login",
-    "message": {
-      "uz": "Foydalanuvchi tizimga kirdi admin",
-      "ru": "Пользователь вошел в систему admin",
-      "en": "User logged in admin"
-    },
-    "created_at": "2026-05-21T17:24:22.918637+00:00"
-  },
-  {
-    "id": 1779384261241,
-    "action": "user_login",
-    "message": {
-      "uz": "Foydalanuvchi tizimga kirdi admin",
-      "ru": "Пользователь вошел в систему admin",
-      "en": "User logged in admin"
-    },
-    "created_at": "2026-05-21T17:24:21.241481+00:00"
   }
 ]
