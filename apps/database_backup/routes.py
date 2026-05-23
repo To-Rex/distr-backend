@@ -206,7 +206,9 @@ async def _perform_import(file: UploadFile, session: AsyncSession, verbose: bool
 
         return {"message": "Database imported successfully"}
 
-    except HTTPException:
+    except HTTPException as e:
+        if verbose:
+            logger.error("Import failed: %s", e.detail)
         raise
     except Exception as e:
         if verbose:
