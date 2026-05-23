@@ -1,5 +1,6 @@
 import os
 import asyncio
+import shutil
 from datetime import datetime
 from urllib.parse import urlparse
 
@@ -33,6 +34,16 @@ def _parse_db_url(url: str):
     return dbname, host, port, user, password
 
 
+def _get_pg_tool(name: str) -> str:
+    path = shutil.which(name)
+    if path is None:
+        raise HTTPException(
+            status_code=500,
+            detail=f"'{name}' not found. Install PostgreSQL client tools (e.g. 'apt install postgresql-client' on Debian/Ubuntu).",
+        )
+    return path
+
+
 async def _ensure_backups_dir():
     os.makedirs(BACKUPS_DIR, exist_ok=True)
 
@@ -56,8 +67,10 @@ async def export_database(
     if password:
         env["PGPASSWORD"] = password
 
+    pg_dump = _get_pg_tool("pg_dump")
+
     cmd = [
-        "pg_dump",
+        pg_dump,
         "-Fc",
         "-h", host,
         "-p", port,
@@ -116,8 +129,10 @@ async def import_database(
     await session.close()
     await dispose_engine()
 
+    pg_restore = _get_pg_tool("pg_restore")
+
     cmd = [
-        "pg_restore",
+        pg_restore,
         "--clean",
         "--if-exists",
         "--no-owner",
