@@ -139,71 +139,83 @@ async def _perform_import(file: UploadFile, session: AsyncSession, verbose: bool
     if verbose:
         logger.info("Starting database import from %s (%d bytes)", file.filename, len(content))
 
-    dbname, host, port, user, password = _parse_db_url(DATABASE_URL)
-
-    env = os.environ.copy()
-    if password:
-        env["PGPASSWORD"] = password
-
-    await session.close()
-    await dispose_engine()
-
-    await _clean_schema()
-
-    pg_restore = _get_pg_tool("pg_restore")
-
-    cmd = [
-        pg_restore,
-        "--no-owner",
-        "-h", host,
-        "-p", port,
-        "-U", user,
-        "-d", dbname,
-        filepath,
-    ]
-
     try:
-        process = await asyncio.create_subprocess_exec(
-            *cmd,
-            env=env,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        _, stderr = await asyncio.wait_for(
-            process.communicate(), timeout=600
-        )
-    except asyncio.TimeoutError:
-        process.kill()
-        await process.wait()
-        if verbose:
-            logger.error("Database import timed out after 10 minutes")
+        dbname, host, port, user, password = _parse_db_url(DATABASE_URL)
+
+        env = os.environ.copy()
+        if password:
+            env["PGPASSWORD"] = password
+
+        await session.close()
+        await dispose_engine()
+
+        await _clean_schema()
+
+        pg_restore = _get_pg_tool("pg_restore")
+
+        cmd = [
+            pg_restore,
+            "--no-owner",
+            "-h", host,
+            "-p", port,
+            "-U", user,
+            "-d", dbname,
+            filepath,
+        ]
+
+        try:
+            process = await asyncio.create_subprocess_exec(
+                *cmd,
+                env=env,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            _, stderr = await asyncio.wait_for(
+                process.communicate(), timeout=600
+            )
+        except asyncio.TimeoutError:
+            process.kill()
+            await process.wait()
+            if verbose:
+                logger.error("Database import timed out after 10 minutes")
+            try:
+                os.remove(filepath)
+            except OSError:
+                pass
+            raise HTTPException(
+                status_code=504,
+                detail="Database import timed out after 10 minutes",
+            )
+
         try:
             os.remove(filepath)
         except OSError:
             pass
-        raise HTTPException(
-            status_code=504,
-            detail="Database import timed out after 10 minutes",
-        )
 
-    try:
-        os.remove(filepath)
-    except OSError:
-        pass
+        if process.returncode != 0:
+            error_msg = stderr.decode().strip() if stderr else "Unknown error"
+            if verbose:
+                logger.error("pg_restore failed (exit code %d): %s", process.returncode, error_msg)
+            raise HTTPException(
+                status_code=500,
+                detail=f"Database import failed: {error_msg}",
+            )
 
-    if process.returncode != 0:
-        error_msg = stderr.decode().strip() if stderr else "Unknown error"
         if verbose:
-            logger.error("pg_restore failed (exit code %d): %s", process.returncode, error_msg)
-        raise HTTPException(
-            status_code=500,
-            detail=f"Database import failed: {error_msg}",
-        )
+            logger.info("Database import completed successfully")
 
-    if verbose:
-        logger.info("Database import completed successfully")
+        return {"message": "Database imported successfully"}
 
-    return {"message": "Database imported successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        if verbose:
+            logger.exception("Unexpected error during import: %s", e)
+        try:
+            os.remove(filepath)
+        except OSError:
+            pass
+        raise HTTPException(status_code=500, detail=f"Database import failed: {str(e)}")
 
 
 @router.post("/import")
