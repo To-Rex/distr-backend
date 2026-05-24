@@ -97,9 +97,9 @@ admin.add_view(NotificationAdmin)
 admin.add_view(NotificationUserStatusAdmin)
 admin.add_view(AlembicVersionAdmin)
 
-@app.get("/")
-async def redirect_root():
-    return RedirectResponse(url="https://dms.mxsoft.uz/")
+# @app.get("/")
+# async def redirect_root():
+#     return RedirectResponse(url="https://dms.mxsoft.uz/")
 
 # admin
 app.include_router(main_router)
