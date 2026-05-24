@@ -57,6 +57,8 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+
 class CORSAnyOriginMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
         if request.method == "OPTIONS":
@@ -71,6 +73,7 @@ class CORSAnyOriginMiddleware(BaseHTTPMiddleware):
         response.headers["Access-Control-Allow-Headers"] = "*"
         response.headers["Access-Control-Max-Age"] = "86400"
         return response
+
 
 app.add_middleware(CORSAnyOriginMiddleware)
 
@@ -97,9 +100,10 @@ admin.add_view(NotificationAdmin)
 admin.add_view(NotificationUserStatusAdmin)
 admin.add_view(AlembicVersionAdmin)
 
-# @app.get("/")
-# async def redirect_root():
-#     return RedirectResponse(url="https://dms.mxsoft.uz/")
+
+@app.get("/")
+async def redirect_root():
+    return RedirectResponse(url="https://dms.mxsoft.uz/")
 
 # admin
 app.include_router(main_router)
@@ -113,8 +117,10 @@ print(f"Current Directory: {os.getcwd()}")
 print(f"Media folder exists: {os.path.exists('media')}")
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
-app.mount("/appstore/uploads", StaticFiles(directory=str(APPSTORE_UPLOADS_DIR)), name="appstore-uploads")
-app.mount("/appstore/exports", StaticFiles(directory=str(APPSTORE_EXPORTS_DIR)), name="appstore-exports")
+app.mount("/appstore/uploads",
+          StaticFiles(directory=str(APPSTORE_UPLOADS_DIR)), name="appstore-uploads")
+app.mount("/appstore/exports",
+          StaticFiles(directory=str(APPSTORE_EXPORTS_DIR)), name="appstore-exports")
 
 if __name__ == "__main__":
     import uvicorn
