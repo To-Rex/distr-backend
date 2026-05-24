@@ -83,60 +83,14 @@ class C2Manager:
             "status": "offline"
         })
 
-    # ─────────────────────────────────────────────
-    # UPDATE LOCATION
-    # Works for both Agent AND Supervisor
-    # - Agent   → bubbles to Supervisor + Manager
-    # - Supervisor → bubbles to Manager only
-    # ─────────────────────────────────────────────
-    # async def update_location(self, sender_id: int, data: dict):
-    #     role = self.user_roles.get(sender_id, "")
-    #     loc = data.get("location", {})
-    #     user = None
-    #     async with async_session_maker() as session:
-    #         res = await session.execute(
-    #             select(User).where(User.id == sender_id)
-    #         )
-    #         user = res.scalar_one_or_none()
-
-    #     # Only Agents, Deliverers, and Supervisors can send location
-    #     allowed_roles = ["AGENT", "DELIVERER", "MERCHANDISER", "SUPERVISOR"]
-    #     if role not in allowed_roles:
-    #         logger.warning(
-    #             f"[LOCATION] User {sender_id} ({role}) tried to send location — ignored")
-    #         return
-
-    #     payload = {
-    #         "action": "update_location",
-    #         "user": user,
-    #         "role": role,
-    #         "location": {
-    #             "latitude": loc.get("latitude"),
-    #             "longitude": loc.get("longitude"),
-    #             "device_name": loc.get("device_name", "Unknown"),
-    #         },
-    #         "speed": data.get("speed", 0.0),
-    #         "bearing": data.get("bearing", 0.0),
-    #         "accuracy": data.get("accuracy", 0),
-    #         "altitude": data.get("altitude", 0.0),
-    #         "timestamp": data.get("timestamp") or datetime.now().isoformat(),
-    #     }
-
-    #     logger.info(f"[LOCATION] {role} {sender_id} → bubbling up")
-
-    #     # Save to DB in background
-    #     asyncio.create_task(self._save_location_to_db(sender_id, loc))
-
-    #     # Bubble up to whoever is above in hierarchy
-    #     await self._notify_hierarchy(sender_id, payload)
-
     async def update_location(self, sender_id: int, data: dict):
         role = self.user_roles.get(sender_id, "")
         loc = data.get("location", {})
         print(loc)
 
         # Only Agents, Deliverers, and Supervisors can send location
-        allowed_roles = ["AGENT", "DELIVERER", "MERCHANDISER", "SUPERVISOR"]
+        allowed_roles = ["AGENT", "DELIVERER", 
+                         "MERCHANDISER", "SUPERVISOR", "VENDOR_AGENT"]
         if role not in allowed_roles:
             logger.warning(
                 f"[LOCATION] User {sender_id} ({role}) tried to send location — ignored")
