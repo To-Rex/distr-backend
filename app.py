@@ -121,25 +121,6 @@ app.mount("/appstore/exports",
           StaticFiles(directory=str(APPSTORE_EXPORTS_DIR)), name="appstore-exports")
 
 if __name__ == "__main__":
-    import socket
     import uvicorn
 
-    HOST = os.getenv("HOST", "0.0.0.0")
-    PORT = int(os.getenv("PORT", "8002"))
-    MAX_PORT = PORT + 10
-
-    def _find_port(host: str, start_port: int, max_port: int) -> int:
-        for port in range(start_port, max_port + 1):
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                try:
-                    s.bind((host, port))
-                    return port
-                except OSError:
-                    continue
-        raise RuntimeError(f"No free port found in range {start_port}–{max_port}")
-
-    actual_port = _find_port(HOST, PORT, MAX_PORT)
-    if actual_port != PORT:
-        print(f"Port {PORT} is busy, using port {actual_port} instead")
-
-    uvicorn.run("app:app", host=HOST, port=actual_port, reload=True)
+    uvicorn.run("app:app", host="0.0.0.0", port=8002, reload=True)
