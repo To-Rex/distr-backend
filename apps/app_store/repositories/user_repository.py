@@ -1,37 +1,37 @@
 from typing import Optional
 
 from apps.app_store.config import USERS_JSON
-from apps.app_store.utils.json_db import JsonDB
+from apps.app_store.utils.minio_json_db import MinioJsonDB
 
 
 class UserRepository:
     @staticmethod
     def get_all() -> list[dict]:
-        return JsonDB.read(USERS_JSON)
+        return MinioJsonDB.read(USERS_JSON)
 
     @staticmethod
     def get_by_id(user_id: str) -> Optional[dict]:
-        return JsonDB.read_one(USERS_JSON, lambda u: u["id"] == user_id)
+        return MinioJsonDB.read_one(USERS_JSON, lambda u: u["id"] == user_id)
 
     @staticmethod
     def get_by_username(username: str) -> Optional[dict]:
-        return JsonDB.read_one(USERS_JSON, lambda u: u["username"] == username)
+        return MinioJsonDB.read_one(USERS_JSON, lambda u: u["username"] == username)
 
     @staticmethod
     def get_by_email(email: str) -> Optional[dict]:
-        return JsonDB.read_one(USERS_JSON, lambda u: u["email"] == email)
+        return MinioJsonDB.read_one(USERS_JSON, lambda u: u["email"] == email)
 
     @staticmethod
     def create(user: dict) -> dict:
-        return JsonDB.insert(USERS_JSON, user)
+        return MinioJsonDB.insert(USERS_JSON, user)
 
     @staticmethod
     def update(user_id: str, updates: dict) -> Optional[dict]:
-        return JsonDB.update(USERS_JSON, lambda u: u["id"] == user_id, updates)
+        return MinioJsonDB.update(USERS_JSON, lambda u: u["id"] == user_id, updates)
 
     @staticmethod
     def delete(user_id: str) -> bool:
-        return JsonDB.delete(USERS_JSON, lambda u: u["id"] == user_id)
+        return MinioJsonDB.delete(USERS_JSON, lambda u: u["id"] == user_id)
 
     @staticmethod
     def search(
@@ -40,7 +40,7 @@ class UserRepository:
         page: int = 1,
         limit: int = 20,
     ) -> tuple[list[dict], int]:
-        users = JsonDB.read(USERS_JSON)
+        users = MinioJsonDB.read(USERS_JSON)
         if q:
             q_lower = q.lower()
             users = [

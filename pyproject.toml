@@ -24,6 +24,7 @@ dependencies = [
     "python-slugify>=8.0.4",
     "bcrypt>=4.2.0",
     "PyJWT>=2.9.0",
+    "minio>=7.2.0",
 ]
 
 [tool.pytest.ini_options]

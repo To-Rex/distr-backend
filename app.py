@@ -16,7 +16,7 @@ from config.dashboard_security import authentication_backend
 from config.database import create_all_tables, engine
 from apps.routes import main_router
 from apps.app_store.routes import app_store_router
-from apps.app_store.config import UPLOADS_DIR as APPSTORE_UPLOADS_DIR, EXPORTS_DIR as APPSTORE_EXPORTS_DIR
+from apps.app_store.config import EXPORTS_DIR as APPSTORE_EXPORTS_DIR
 from sqladmin import Admin
 import firebase_admin
 from firebase_admin import credentials
@@ -117,8 +117,6 @@ print(f"Current Directory: {os.getcwd()}")
 print(f"Media folder exists: {os.path.exists('media')}")
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
-app.mount("/appstore/uploads",
-          StaticFiles(directory=str(APPSTORE_UPLOADS_DIR)), name="appstore-uploads")
 app.mount("/appstore/exports",
           StaticFiles(directory=str(APPSTORE_EXPORTS_DIR)), name="appstore-exports")
 

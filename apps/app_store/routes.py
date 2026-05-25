@@ -12,6 +12,7 @@ from apps.app_store.routers import (
     categories,
     stats,
     data_export,
+    files,
 )
 
 app_store_router = APIRouter(prefix="/appstore")
@@ -27,6 +28,7 @@ app_store_router.include_router(upload.router)
 app_store_router.include_router(categories.router)
 app_store_router.include_router(stats.router)
 app_store_router.include_router(data_export.router)
+app_store_router.include_router(files.router)
 
 
 @app_store_router.get("/health")

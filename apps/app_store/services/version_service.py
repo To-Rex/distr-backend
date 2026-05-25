@@ -1,10 +1,10 @@
 from datetime import date
-from pathlib import Path
 from typing import Optional
 
 from apps.app_store.config import BASE_URL
 from apps.app_store.repositories.app_repository import AppRepository
 from apps.app_store.repositories.version_repository import VersionRepository
+from apps.app_store.services.minio_storage import delete_file
 
 
 class VersionService:
@@ -151,10 +151,7 @@ class VersionService:
 
         file_path = v.get("filePath")
         if file_path:
-            try:
-                Path(file_path).unlink(missing_ok=True)
-            except Exception:
-                pass
+            delete_file(file_path)
 
         deleted = VersionRepository.delete(app_id, version)
         if deleted:

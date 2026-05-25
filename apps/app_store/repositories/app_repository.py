@@ -1,29 +1,29 @@
 from typing import Optional
 
 from apps.app_store.config import APPS_JSON
-from apps.app_store.utils.json_db import JsonDB
+from apps.app_store.utils.minio_json_db import MinioJsonDB
 
 
 class AppRepository:
     @staticmethod
     def get_all() -> list[dict]:
-        return JsonDB.read(APPS_JSON)
+        return MinioJsonDB.read(APPS_JSON)
 
     @staticmethod
     def get_by_id(app_id: str) -> Optional[dict]:
-        return JsonDB.read_one(APPS_JSON, lambda a: a["id"] == app_id)
+        return MinioJsonDB.read_one(APPS_JSON, lambda a: a["id"] == app_id)
 
     @staticmethod
     def create(app: dict) -> dict:
-        return JsonDB.insert(APPS_JSON, app)
+        return MinioJsonDB.insert(APPS_JSON, app)
 
     @staticmethod
     def update(app_id: str, updates: dict) -> Optional[dict]:
-        return JsonDB.update(APPS_JSON, lambda a: a["id"] == app_id, updates)
+        return MinioJsonDB.update(APPS_JSON, lambda a: a["id"] == app_id, updates)
 
     @staticmethod
     def delete(app_id: str) -> bool:
-        return JsonDB.delete(APPS_JSON, lambda a: a["id"] == app_id)
+        return MinioJsonDB.delete(APPS_JSON, lambda a: a["id"] == app_id)
 
     @staticmethod
     def search(
@@ -35,7 +35,7 @@ class AppRepository:
         limit: int = 20,
         created_by: Optional[str] = None,
     ) -> tuple[list[dict], int]:
-        apps = JsonDB.read(APPS_JSON)
+        apps = MinioJsonDB.read(APPS_JSON)
 
         if created_by:
             apps = [a for a in apps if a["createdBy"] == created_by]
@@ -73,28 +73,28 @@ class AppRepository:
 
     @staticmethod
     def get_featured(limit: int = 3) -> list[dict]:
-        apps = JsonDB.read(APPS_JSON)
+        apps = MinioJsonDB.read(APPS_JSON)
         apps = [a for a in apps if a.get("published")]
         apps.sort(key=lambda a: a.get("totalDownloads", 0), reverse=True)
         return apps[:limit]
 
     @staticmethod
     def get_recently_updated(limit: int = 4) -> list[dict]:
-        apps = JsonDB.read(APPS_JSON)
+        apps = MinioJsonDB.read(APPS_JSON)
         apps = [a for a in apps if a.get("published")]
         apps.sort(key=lambda a: a.get("updatedAt", ""), reverse=True)
         return apps[:limit]
 
     @staticmethod
     def get_newest(limit: int = 4) -> list[dict]:
-        apps = JsonDB.read(APPS_JSON)
+        apps = MinioJsonDB.read(APPS_JSON)
         apps = [a for a in apps if a.get("published")]
         apps.sort(key=lambda a: a.get("createdAt", ""), reverse=True)
         return apps[:limit]
 
     @staticmethod
     def get_by_category() -> dict[str, int]:
-        apps = JsonDB.read(APPS_JSON)
+        apps = MinioJsonDB.read(APPS_JSON)
         counts: dict[str, int] = {}
         for app in apps:
             cat = app.get("category", "")

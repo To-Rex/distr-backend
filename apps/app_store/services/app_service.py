@@ -2,15 +2,13 @@ import uuid
 from datetime import date
 from typing import Optional
 
-from pathlib import Path
-
 from slugify import slugify
 
-from apps.app_store.config import BASE_URL, APPS_JSON, ICONS_DIR, SCREENSHOTS_DIR
+from apps.app_store.config import BASE_URL
 from apps.app_store.repositories.app_repository import AppRepository
 from apps.app_store.repositories.user_repository import UserRepository
 from apps.app_store.repositories.version_repository import VersionRepository
-from apps.app_store.utils.json_db import JsonDB
+from apps.app_store.services.minio_storage import delete_file, file_exists
 
 
 class AppService:
@@ -144,15 +142,12 @@ class AppService:
         return AppRepository.get_by_id(app_id)
 
     @staticmethod
-    def _delete_file_by_url(url: str, directory: Path):
+    def _delete_file_by_url(url: str):
         if not url:
             return
-        filename = url.split("/")[-1]
-        file_path = directory / filename
-        try:
-            file_path.unlink(missing_ok=True)
-        except Exception:
-            pass
+        if "/uploads/" in url:
+            object_key = url.split("/uploads/")[-1]
+            delete_file(object_key)
 
     @staticmethod
     def delete_app(app_id: str) -> bool:
@@ -160,19 +155,16 @@ class AppService:
         if not app:
             return False
 
-        AppService._delete_file_by_url(app.get("icon", ""), ICONS_DIR)
+        AppService._delete_file_by_url(app.get("icon", ""))
 
         for url in app.get("screenshots", []):
-            AppService._delete_file_by_url(url, SCREENSHOTS_DIR)
+            AppService._delete_file_by_url(url)
 
         versions = VersionRepository.get_by_app(app_id)
         for v in versions:
             file_path = v.get("filePath")
             if file_path:
-                try:
-                    Path(file_path).unlink(missing_ok=True)
-                except Exception:
-                    pass
+                delete_file(file_path)
 
         VersionRepository.delete_by_app(app_id)
         return AppRepository.delete(app_id)
@@ -217,11 +209,7 @@ class AppService:
         if not latest:
             return False
         file_path = latest.get("filePath", "")
-        if file_path:
-            from pathlib import Path
-
-            return Path(file_path).exists()
-        return False
+        return bool(file_path and file_exists(file_path))
 
     @staticmethod
     def _public_summary(app: dict) -> dict:
@@ -247,7 +235,7 @@ class AppService:
         versions = VersionRepository.get_by_app(app["id"])
         version_list = [AppService._version_response(v) for v in versions]
         has_apk = any(
-            v.get("filePath") and Path(v["filePath"]).exists() for v in versions
+            v.get("filePath") and file_exists(v["filePath"]) for v in versions
         )
         return {
             "id": app["id"],
@@ -274,7 +262,7 @@ class AppService:
         version_list = [AppService._version_response(v) for v in versions]
         creator = UserRepository.get_by_id(app.get("createdBy", ""))
         has_apk = any(
-            v.get("filePath") and Path(v["filePath"]).exists() for v in versions
+            v.get("filePath") and file_exists(v["filePath"]) for v in versions
         )
         return {
             "id": app["id"],
@@ -308,5 +296,5 @@ class AppService:
             "downloadUrl": f"{BASE_URL}/apps/{v['appId']}/versions/{v['version']}/download",
             "downloadCount": v.get("downloadCount", 0),
             "isLatest": v.get("isLatest", False),
-            "hasApk": bool(file_path and Path(file_path).exists()),
+            "hasApk": bool(file_path and file_exists(file_path)),
         }
