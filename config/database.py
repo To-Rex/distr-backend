@@ -4,9 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from apps.base.models import Base
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://postgres:toor@distr.mxsoft.uz:5432/mx_soft_db")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-if os.path.isfile(".env"):
+if not DATABASE_URL and os.path.isfile(".env"):
     with open(".env") as f:
         for line in f:
             line = line.strip()
@@ -16,6 +16,9 @@ if os.path.isfile(".env"):
             if key.strip() == "DATABASE_URL":
                 DATABASE_URL = val.strip().strip("\"'")
                 break
+
+if not DATABASE_URL:
+    DATABASE_URL = "postgresql+asyncpg://postgres:toor@distr.mxsoft.uz:5432/mx_soft_db"
 
 
 engine = create_async_engine(DATABASE_URL)
