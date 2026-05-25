@@ -4,7 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from apps.base.models import Base
 
-DATABASE_URL = 'postgresql+asyncpg://postgres:toor@distr.mxsoft.uz:5432/mx_soft_db'
+#DATABASE_URL = 'postgresql+asyncpg://postgres:toor@distr.mxsoft.uz:5432/mx_soft_db'
+DATABASE_URL = os.getenv("DATABASE_URL","")
 
 #if not DATABASE_URL:
     #DATABASE_URL = "postgresql+asyncpg://postgres:toor@distr.mxsoft.uz:5432/mx_soft_db"
