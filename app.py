@@ -125,7 +125,7 @@ if __name__ == "__main__":
     import uvicorn
 
     HOST = os.getenv("HOST", "0.0.0.0")
-    PORT = int(os.getenv("PORT", "8001"))
+    PORT = int(os.getenv("PORT", "8002"))
     MAX_PORT = PORT + 10
 
     def _find_port(host: str, start_port: int, max_port: int) -> int:
