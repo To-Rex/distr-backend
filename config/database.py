@@ -6,17 +6,6 @@ from apps.base.models import Base
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-if not DATABASE_URL and os.path.isfile(".env"):
-    with open(".env") as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith("#") or "=" not in line:
-                continue
-            key, _, val = line.partition("=")
-            if key.strip() == "DATABASE_URL":
-                DATABASE_URL = val.strip().strip("\"'")
-                break
-
 if not DATABASE_URL:
     DATABASE_URL = "postgresql+asyncpg://postgres:toor@distr.mxsoft.uz:5432/mx_soft_db"
 
