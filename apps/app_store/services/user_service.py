@@ -102,6 +102,26 @@ class UserService:
         return UserRepository.delete(user_id)
 
     @staticmethod
+    def ensure_default_admin() -> None:
+        users = UserRepository.get_all()
+        if users:
+            return
+
+        from datetime import date
+
+        admin_user = {
+            "id": "user-admin-001",
+            "username": "admin",
+            "email": "admin@appstore.mxsoft.uz",
+            "password": AuthService.hash_password("admin"),
+            "role": "admin",
+            "displayName": "admin",
+            "avatar": None,
+            "createdAt": date.today().isoformat(),
+        }
+        UserRepository.create(admin_user)
+
+    @staticmethod
     def _user_response(user: dict) -> dict:
         return {
             "id": user["id"],
