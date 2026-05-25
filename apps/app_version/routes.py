@@ -58,6 +58,34 @@ async def list_apps(
     return result.scalars().all()
 
 
+# Keep existing endpoints
+@router.get("/latest-version", response_model=VersionResponse)
+async def get_latest_version(
+    app_type: str = Query(..., description="App type (e.g., agent, deliverer)"),
+    session: AsyncSession = Depends(get_async_session),
+):
+    result = await session.execute(select(App).where(App.name.ilike(f"%{app_type}%")))
+    app = result.scalar_one_or_none()
+    if not app:
+        raise HTTPException(
+            status_code=404, detail=f"App with type '{app_type}' not found"
+        )
+
+    result = await session.execute(
+        select(Version)
+        .where(Version.app_id == app.id)
+        .order_by(desc(Version.created_at))
+        .limit(1)
+    )
+    version = result.scalar_one_or_none()
+    if not version:
+        raise HTTPException(
+            status_code=404, detail="No version found for this app"
+        )
+
+    return version
+
+
 @router.get("/{app_id}", response_model=AppResponse)
 async def get_app(
     app_id: int,
@@ -205,34 +233,6 @@ async def delete_version(
     
     await session.delete(version)
     await session.commit()
-
-
-# Keep existing endpoints
-@router.get("/latest-version", response_model=VersionResponse)
-async def get_latest_version(
-    app_type: str = Query(..., description="App type (e.g., agent, deliverer)"),
-    session: AsyncSession = Depends(get_async_session),
-):
-    result = await session.execute(select(App).where(App.name.ilike(f"%{app_type}%")))
-    app = result.scalar_one_or_none()
-    if not app:
-        raise HTTPException(
-            status_code=404, detail=f"App with type '{app_type}' not found"
-        )
-
-    result = await session.execute(
-        select(Version)
-        .where(Version.app_id == app.id)
-        .order_by(desc(Version.created_at))
-        .limit(1)
-    )
-    version = result.scalar_one_or_none()
-    if not version:
-        raise HTTPException(
-            status_code=404, detail="No version found for this app"
-        )
-
-    return version
 
 
 # Define upload directory (relative to your project root)
