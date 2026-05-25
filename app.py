@@ -42,7 +42,16 @@ async def lifespan(app: FastAPI):
     await create_all_tables()
     print("[+] All tables created")
 
-    # 2. Firebase logic (Check if already initialized to prevent crash)
+    # 2. AppStore default admin seeding
+    try:
+        from apps.app_store.services.user_service import UserService
+
+        UserService.ensure_default_admin()
+        print("[+] AppStore default admin ensured")
+    except Exception as e:
+        print(f"[!] Failed to seed AppStore default admin: {e}")
+
+    # 3. Firebase logic (Check if already initialized to prevent crash)
     if not firebase_admin._apps:
         cred = credentials.Certificate("config/config_notification.json")
         firebase_admin.initialize_app(cred)
