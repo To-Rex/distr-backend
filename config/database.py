@@ -1,10 +1,13 @@
 import os
 from collections.abc import AsyncGenerator
+
+from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from apps.base.models import Base
 
-#DATABASE_URL = 'postgresql+asyncpg://postgres:toor@distr.mxsoft.uz:5432/mx_soft_db'
+load_dotenv()
+
 DATABASE_URL = os.getenv("DATABASE_URL","")
 
 #if not DATABASE_URL:
