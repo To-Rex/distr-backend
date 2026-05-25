@@ -1,32 +1,32 @@
 from typing import Optional
 
 from apps.app_store.config import VERSIONS_JSON
-from apps.app_store.utils.json_db import JsonDB
+from apps.app_store.utils.minio_json_db import MinioJsonDB
 
 
 class VersionRepository:
     @staticmethod
     def get_all() -> list[dict]:
-        return JsonDB.read(VERSIONS_JSON)
+        return MinioJsonDB.read(VERSIONS_JSON)
 
     @staticmethod
     def get_by_app(app_id: str) -> list[dict]:
-        versions = JsonDB.read(VERSIONS_JSON)
+        versions = MinioJsonDB.read(VERSIONS_JSON)
         return [v for v in versions if v["appId"] == app_id]
 
     @staticmethod
     def get_by_app_and_version(app_id: str, version: str) -> Optional[dict]:
-        return JsonDB.read_one(
+        return MinioJsonDB.read_one(
             VERSIONS_JSON, lambda v: v["appId"] == app_id and v["version"] == version
         )
 
     @staticmethod
     def create(version: dict) -> dict:
-        return JsonDB.insert(VERSIONS_JSON, version)
+        return MinioJsonDB.insert(VERSIONS_JSON, version)
 
     @staticmethod
     def update(app_id: str, version: str, updates: dict) -> Optional[dict]:
-        return JsonDB.update(
+        return MinioJsonDB.update(
             VERSIONS_JSON,
             lambda v: v["appId"] == app_id and v["version"] == version,
             updates,
@@ -34,16 +34,16 @@ class VersionRepository:
 
     @staticmethod
     def delete(app_id: str, version: str) -> bool:
-        return JsonDB.delete(
+        return MinioJsonDB.delete(
             VERSIONS_JSON,
             lambda v: v["appId"] == app_id and v["version"] == version,
         )
 
     @staticmethod
     def delete_by_app(app_id: str) -> bool:
-        versions = JsonDB.read(VERSIONS_JSON)
+        versions = MinioJsonDB.read(VERSIONS_JSON)
         remaining = [v for v in versions if v["appId"] != app_id]
-        JsonDB.write(VERSIONS_JSON, remaining)
+        MinioJsonDB.write(VERSIONS_JSON, remaining)
         return True
 
     @staticmethod
@@ -54,11 +54,11 @@ class VersionRepository:
 
     @staticmethod
     def set_latest(app_id: str, version_str: str) -> None:
-        versions = JsonDB.read(VERSIONS_JSON)
+        versions = MinioJsonDB.read(VERSIONS_JSON)
         for v in versions:
             if v["appId"] == app_id:
                 v["isLatest"] = v["version"] == version_str
-        JsonDB.write(VERSIONS_JSON, versions)
+        MinioJsonDB.write(VERSIONS_JSON, versions)
 
     @staticmethod
     def get_sorted(
@@ -73,11 +73,11 @@ class VersionRepository:
 
     @staticmethod
     def increment_download(app_id: str, version: str) -> None:
-        versions = JsonDB.read(VERSIONS_JSON)
+        versions = MinioJsonDB.read(VERSIONS_JSON)
         for v in versions:
             if v["appId"] == app_id and v["version"] == version:
                 v["downloadCount"] = v.get("downloadCount", 0) + 1
-        JsonDB.write(VERSIONS_JSON, versions)
+        MinioJsonDB.write(VERSIONS_JSON, versions)
 
     @staticmethod
     def total_download_count(app_id: str) -> int:

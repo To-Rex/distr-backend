@@ -5,7 +5,6 @@ from apps.app_store.repositories.user_repository import UserRepository
 from apps.app_store.repositories.app_repository import AppRepository
 from apps.app_store.repositories.version_repository import VersionRepository
 from apps.app_store.services.auth_service import AuthService
-from apps.app_store.utils.json_db import JsonDB
 
 
 class UserService:

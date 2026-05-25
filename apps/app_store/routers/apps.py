@@ -1,8 +1,9 @@
 from fastapi import APIRouter, HTTPException, status
-from fastapi.responses import FileResponse
+from fastapi.responses import StreamingResponse
 
 from apps.app_store.services.app_service import AppService
 from apps.app_store.services.version_service import VersionService
+from apps.app_store.services.minio_storage import get_object
 from apps.app_store.utils.response import success_response, error_response, paginated_response
 
 router = APIRouter(prefix="", tags=["AppStore Apps Public"])
@@ -68,17 +69,16 @@ def download_version(app_id: str, version: str):
 
     file_path = v.get("filePath", "")
     if file_path:
-        from pathlib import Path
-
-        p = Path(file_path)
-        if p.exists():
+        data = get_object(file_path)
+        if data:
             app = AppService.get_by_id(app_id)
             app_name = app["name"] if app else "App"
             download_filename = f"{app_name} v{version}.apk"
-            return FileResponse(
-                path=str(p),
+            data.seek(0)
+            return StreamingResponse(
+                data,
                 media_type="application/vnd.android.package-archive",
-                filename=download_filename,
+                headers={"Content-Disposition": f'attachment; filename="{download_filename}"'},
             )
 
     from apps.app_store.config import BASE_URL

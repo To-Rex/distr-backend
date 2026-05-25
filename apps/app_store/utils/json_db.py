@@ -22,14 +22,18 @@ class JsonDB:
         with lock:
             if not file_path.exists():
                 return []
-            with open(file_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            return data if isinstance(data, list) else []
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                return data if isinstance(data, list) else []
+            except (json.JSONDecodeError, ValueError):
+                return []
 
     @classmethod
     def write(cls, file_path: Path, data: list[dict[str, Any]]) -> None:
         lock = cls._get_lock(file_path)
         with lock:
+            file_path.parent.mkdir(parents=True, exist_ok=True)
             with open(file_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
 

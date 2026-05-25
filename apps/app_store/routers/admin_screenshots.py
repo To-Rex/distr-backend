@@ -1,11 +1,9 @@
-from pathlib import Path
-
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
-from apps.app_store.config import SCREENSHOTS_DIR
 from apps.app_store.middleware.auth import get_current_user
 from apps.app_store.repositories.app_repository import AppRepository
 from apps.app_store.services.upload_service import UploadService
+from apps.app_store.services.minio_storage import delete_file
 from apps.app_store.utils.response import success_response, error_response
 
 router = APIRouter(prefix="/admin", tags=["AppStore Admin Screenshots"])
@@ -27,10 +25,9 @@ def _check_app_access(app_id: str, current_user: dict):
 
 
 def _delete_screenshot_file(screenshot_url: str):
-    filename = screenshot_url.split("/")[-1]
-    file_path = SCREENSHOTS_DIR / filename
-    if file_path.exists():
-        file_path.unlink()
+    if "/uploads/" in screenshot_url:
+        object_key = screenshot_url.split("/uploads/")[-1]
+        delete_file(object_key)
 
 
 @router.post("/apps/{app_id}/screenshots")
