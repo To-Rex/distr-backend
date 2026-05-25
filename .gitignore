@@ -15,6 +15,7 @@ alembic.ini
 backups/
 
 .env
+.env_example
 
 # App data (should not be committed)
 apps/app_store/data/
