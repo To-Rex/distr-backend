@@ -70,6 +70,26 @@ async def _clean_schema():
         await conn.close()
 
 
+async def _upload_to_minio(filepath: str, object_key: str) -> None:
+    def _do_upload():
+        from apps.app_store.services.minio_storage import _get_client
+        from apps.app_store.config import MINIO_BUCKET
+
+        client = _get_client()
+        client.fput_object(
+            bucket_name=MINIO_BUCKET,
+            object_name=object_key,
+            file_path=filepath,
+            content_type="application/octet-stream",
+        )
+
+    try:
+        await asyncio.to_thread(_do_upload)
+        logger.info("Database dump uploaded to MinIO: %s", object_key)
+    except Exception as e:
+        logger.error("Failed to upload database dump to MinIO: %s", e)
+
+
 @router.get("/export")
 async def export_database(
     current_user: User = Depends(get_current_user_by_token),
@@ -115,6 +135,8 @@ async def export_database(
             status_code=500,
             detail=f"Database export failed: {error_msg}",
         )
+
+    asyncio.create_task(_upload_to_minio(filepath, f"database_backups/{filename}"))
 
     return FileResponse(
         path=filepath,
