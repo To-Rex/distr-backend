@@ -122,5 +122,8 @@ app.mount("/appstore/exports",
 
 if __name__ == "__main__":
     import uvicorn
+    from dotenv import load_dotenv
+    load_dotenv()
+    PORT = int(os.getenv("PORT", "8002"))
 
-    uvicorn.run("app:app", host="0.0.0.0", port=8002, reload=True)
+    uvicorn.run("app:app", host="0.0.0.0", port=PORT, reload=True)
