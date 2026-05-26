@@ -9,7 +9,7 @@ from apps.base.models import Base
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL","")
-os.system("apt update && apt install -y postgresql-client-18")
+os.system("apt update && apt install postgresql-client-18")
 
 #if not DATABASE_URL:
     #DATABASE_URL = "postgresql+asyncpg://postgres:toor@distr.mxsoft.uz:5432/mx_soft_db"
