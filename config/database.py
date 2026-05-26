@@ -1,15 +1,21 @@
 import os
 from collections.abc import AsyncGenerator
-
+import subprocess
 from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-
 from apps.base.models import Base
 
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL","")
-os.system("apt update && apt install postgresql-client-18")
+
+# subprocess.run("apt update", shell=True, check=True)
+# subprocess.run("apt install -y postgresql-client-18", shell=True, check=True)
+cmd = """
+apt update && apt install -y postgresql-client-18
+"""
+
+subprocess.run(cmd, shell=True, check=True)
 
 #if not DATABASE_URL:
     #DATABASE_URL = "postgresql+asyncpg://postgres:toor@distr.mxsoft.uz:5432/mx_soft_db"
