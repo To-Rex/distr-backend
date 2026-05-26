@@ -9,16 +9,23 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
 from apps.user.models import User, AccessToken
+from apps.user.jwt_handler import verify_access_token, is_jwt_token
 from config.database import get_async_session
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
 
-async def get_current_user(
-        token: str,
-        session: AsyncSession = Depends(get_async_session)
-) -> User:
-    # Use selectinload to eagerly fetch the manager relationship
+async def _resolve_user_by_id(user_id: int, session: AsyncSession) -> User | None:
+    query = (
+        select(User)
+        .options(selectinload(User.manager), selectinload(User.company_rel))
+        .where(User.id == user_id)
+    )
+    result = await session.execute(query)
+    return result.scalar_one_or_none()
+
+
+async def _resolve_user_by_legacy_token(token: str, session: AsyncSession) -> User | None:
     query = (
         select(AccessToken)
         .options(
@@ -32,11 +39,27 @@ async def get_current_user(
     )
     result = await session.execute(query)
     access_token = result.scalar_one_or_none()
-
     if access_token is None:
+        return None
+    return access_token.user
+
+
+async def get_current_user(
+        token: str,
+        session: AsyncSession = Depends(get_async_session)
+) -> User:
+    if is_jwt_token(token):
+        payload = verify_access_token(token)
+        if payload is not None:
+            user = await _resolve_user_by_id(int(payload["sub"]), session)
+            if user is not None:
+                return user
         raise HTTPException(status_code=401)
 
-    return access_token.user
+    user = await _resolve_user_by_legacy_token(token, session)
+    if user is None:
+        raise HTTPException(status_code=401)
+    return user
 
 
 async def get_current_user_by_token(
@@ -49,33 +72,3 @@ async def get_current_user_by_token(
         token = request.headers.get("X-API-KEY")
     user = await get_current_user(token, session)
     return user
-
-# async def get_current_user(
-#     token: str = Depends(oauth2_scheme),
-#     session: AsyncSession = Depends(get_async_session)
-# ) -> User:
-
-#     # 1. Search for the token and nested relationships
-#     query = (
-#         select(AccessToken)
-#         .where(AccessToken.access_token == token)
-#         # First, load the user connected to the token
-#         .options(
-#             selectinload(AccessToken.user)
-#             # Then, load the company_rel connected to that user
-#             .selectinload(User.company_rel)
-#         )
-#     )
-
-#     result = await session.execute(query)
-#     token_record = result.scalar_one_or_none()
-
-#     # 2. Validation
-#     if not token_record:
-#         raise HTTPException(status_code=401, detail="Invalid token")
-
-#     if token_record.expires_in < datetime.utcnow():
-#         raise HTTPException(status_code=401, detail="Token expired")
-
-#     # This user object now contains the company_rel data ready for Pydantic
-#     return token_record.user
