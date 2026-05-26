@@ -1,8 +1,18 @@
+import os
 import secrets
 from datetime import datetime, timedelta, timezone
 from passlib.context import CryptContext
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "mxsoft-distr-jwt-secret-key-2026")
+JWT_ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_DAYS = 30
+REFRESH_TOKEN_EXPIRE_DAYS = 30
 
 
 def get_password_hash(plain_password) -> str:
