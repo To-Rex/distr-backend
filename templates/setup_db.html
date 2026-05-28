@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MXSoft - Database Setup</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 480px;
+            width: 100%;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-bottom: 8px;
+        }
+        .header p {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+        .card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 28px;
+        }
+        .form-group {
+            margin-bottom: 18px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #94a3b8;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px 14px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+        .form-row {
+            display: flex;
+            gap: 14px;
+        }
+        .form-row .form-group { flex: 1; }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 10px;
+        }
+        .btn-primary {
+            background: #3b82f6;
+            color: #fff;
+        }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #334155;
+            color: #e2e8f0;
+        }
+        .btn-outline:hover { background: #334155; }
+        .btn-outline:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-success {
+            background: #16a34a;
+            color: #fff;
+        }
+        .btn-success:hover { background: #15803d; }
+        .message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-top: 16px;
+            display: none;
+            line-height: 1.5;
+        }
+        .message.show { display: block; }
+        .message.success {
+            background: rgba(22, 163, 74, 0.15);
+            border: 1px solid rgba(22, 163, 74, 0.3);
+            color: #86efac;
+        }
+        .message.error {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+        .message.info {
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #93c5fd;
+        }
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>MXSoft Database Setup</h1>
+            <p>Configure your PostgreSQL database connection</p>
+        </div>
+        <div class="card">
+            <form id="db-form" autocomplete="off">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="host">Host</label>
+                        <input type="text" id="host" name="host" value="{{ host }}" placeholder="localhost" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="port">Port</label>
+                        <input type="number" id="port" name="port" value="{{ port }}" placeholder="5432" required min="1" max="65535">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="database">Database Name</label>
+                    <input type="text" id="database" name="database" value="{{ database }}" placeholder="my_database" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="user">User</label>
+                        <input type="text" id="user" name="user" value="{{ user }}" placeholder="postgres" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" value="{{ password }}" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;">
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-outline" id="btn-test" onclick="testConnection()">
+                    Test Connection
+                </button>
+                <button type="button" class="btn btn-primary" id="btn-save" onclick="saveConfig()">
+                    Save &amp; Apply
+                </button>
+            </form>
+
+            <div id="message" class="message"></div>
+        </div>
+    </div>
+
+    <script>
+        function showMessage(text, type) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.className = 'message ' + type + ' show';
+        }
+
+        function hideMessage() {
+            document.getElementById('message').className = 'message';
+        }
+
+        function setLoading(btnId, text, spinner) {
+            const btn = document.getElementById(btnId);
+            btn.disabled = true;
+            btn.innerHTML = (spinner ? '<span class="spinner"></span>' : '') + text;
+        }
+
+        function resetButton(btnId, text, className) {
+            const btn = document.getElementById(btnId);
+            btn.disabled = false;
+            btn.innerHTML = text;
+            btn.className = 'btn ' + className;
+        }
+
+        function getFormData() {
+            return {
+                host: document.getElementById('host').value.trim(),
+                port: parseInt(document.getElementById('port').value),
+                user: document.getElementById('user').value.trim(),
+                password: document.getElementById('password').value,
+                database: document.getElementById('database').value.trim(),
+            };
+        }
+
+        function validateForm(data) {
+            if (!data.host) return 'Host is required';
+            if (!data.port || data.port < 1 || data.port > 65535) return 'Valid port is required (1-65535)';
+            if (!data.user) return 'User is required';
+            if (!data.database) return 'Database name is required';
+            return null;
+        }
+
+        async function testConnection() {
+            const data = getFormData();
+            const error = validateForm(data);
+            if (error) { showMessage(error, 'error'); return; }
+
+            hideMessage();
+            setLoading('btn-test', 'Testing...', true);
+
+            try {
+                const res = await fetch('/setup/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                });
+                const result = await res.json();
+                if (result.success) {
+                    showMessage('✓ Connection successful! Database is reachable.', 'success');
+                    document.getElementById('btn-save').className = 'btn btn-success';
+                } else {
+                    showMessage('✗ Connection failed: ' + result.error, 'error');
+                }
+            } catch (e) {
+                showMessage('✗ Request failed: ' + e.message, 'error');
+            } finally {
+                resetButton('btn-test', 'Test Connection', 'btn-outline');
+            }
+        }
+
+        function disableForm() {
+            document.querySelectorAll('#db-form input, #db-form button').forEach(el => el.disabled = true);
+        }
+
+        async function saveConfig() {
+            const data = getFormData();
+            const error = validateForm(data);
+            if (error) { showMessage(error, 'error'); return; }
+
+            hideMessage();
+            setLoading('btn-save', 'Saving...', true);
+            setLoading('btn-test', 'Test Connection', false);
+
+            try {
+                const res = await fetch('/setup/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                });
+                const result = await res.json();
+                if (result.success) {
+                    if (result.reconnected) {
+                        showMessage(
+                            '✓ Database connected successfully!\n\nRedirecting to dashboard...',
+                            'success'
+                        );
+                        disableForm();
+                        setTimeout(function () { window.location.href = '/'; }, 2500);
+                    } else {
+                        showMessage(
+                            '✓ Configuration saved to .env file.\n\n' +
+                            'Connection test failed: ' + (result.error || 'unknown error') + '\n\n' +
+                            'Please check your settings and restart the application.',
+                            'info'
+                        );
+                        resetButton('btn-save', 'Save & Apply', 'btn-primary');
+                        resetButton('btn-test', 'Test Connection', 'btn-outline');
+                    }
+                } else {
+                    showMessage('✗ Save failed: ' + result.error, 'error');
+                    resetButton('btn-save', 'Save & Apply', 'btn-primary');
+                    resetButton('btn-test', 'Test Connection', 'btn-outline');
+                }
+            } catch (e) {
+                showMessage('✗ Request failed: ' + e.message, 'error');
+                resetButton('btn-save', 'Save & Apply', 'btn-primary');
+                resetButton('btn-test', 'Test Connection', 'btn-outline');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -2,13 +2,14 @@ import os
 from collections.abc import AsyncGenerator
 
 from dotenv import load_dotenv
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from apps.base.models import Base
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL","")
+DATABASE_URL = os.getenv("DATABASE_URL", "") or "postgresql+asyncpg://localhost:5432/postgres"
 #os.system("apt update && apt install -y postgresql-client")
 os.system("""
     apt update -qq && apt install -y curl ca-certificates gnupg lsb-release &&
@@ -38,6 +39,15 @@ async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
 async def create_all_tables():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+
+async def check_db_alive() -> bool:
+    try:
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+        return True
+    except Exception:
+        return False
 
 
 async def dispose_engine():
