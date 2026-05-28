@@ -110,7 +110,7 @@ async def login(
                 status_code=400, detail="Account is not active"
             )
 
-        tokens = await create_jwt_tokens(user, session)
+        tokens = await create_jwt_tokens(user)
         ActivityService.log("user_login", {
             "uz": f"Foydalanuvchi tizimga kirdi {user.username}",
             "ru": f"Пользователь вошел в систему {user.username}",
@@ -145,7 +145,7 @@ async def refresh_token_endpoint(
         if user.user_status == UserStatus.BLOCKED:
             raise HTTPException(status_code=400, detail="Account is not active")
 
-        tokens = await create_jwt_tokens(user, session)
+        tokens = await create_jwt_tokens(user)
         ActivityService.log("user_login", {
             "uz": f"Foydalanuvchi token yangiladi (JWT) {user.username}",
             "ru": f"Пользователь обновил токен (JWT) {user.username}",

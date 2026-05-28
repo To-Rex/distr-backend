@@ -1,62 +1,62 @@
 [
   {
-    "id": 1779969801487,
+    "id": 1779977930525,
     "action": "user_login",
     "message": {
       "uz": "Foydalanuvchi tizimga kirdi admin",
       "ru": "Пользователь вошел в систему admin",
       "en": "User logged in admin"
     },
-    "created_at": "2026-05-28T12:03:21.487510+00:00"
+    "created_at": "2026-05-28T14:18:50.525783+00:00"
   },
   {
-    "id": 1779969667945,
-    "action": "user_registered",
-    "message": {
-      "uz": "Foydalanuvchi ro'yxatdan o'tdi admin",
-      "ru": "Пользователь зарегистрирован admin",
-      "en": "User registered admin"
-    },
-    "created_at": "2026-05-28T12:01:07.945945+00:00"
-  },
-  {
-    "id": 1779967960592,
+    "id": 1779977930371,
     "action": "user_login",
     "message": {
       "uz": "Foydalanuvchi tizimga kirdi admin",
       "ru": "Пользователь вошел в систему admin",
       "en": "User logged in admin"
     },
-    "created_at": "2026-05-28T11:32:40.592906+00:00"
+    "created_at": "2026-05-28T14:18:50.371255+00:00"
   },
   {
-    "id": 1779966296645,
+    "id": 1779977930142,
     "action": "user_login",
     "message": {
       "uz": "Foydalanuvchi tizimga kirdi admin",
       "ru": "Пользователь вошел в систему admin",
       "en": "User logged in admin"
     },
-    "created_at": "2026-05-28T11:04:56.645646+00:00"
+    "created_at": "2026-05-28T14:18:50.142298+00:00"
   },
   {
-    "id": 1779966292035,
+    "id": 1779977929998,
     "action": "user_login",
     "message": {
       "uz": "Foydalanuvchi tizimga kirdi admin",
       "ru": "Пользователь вошел в систему admin",
       "en": "User logged in admin"
     },
-    "created_at": "2026-05-28T11:04:52.035952+00:00"
+    "created_at": "2026-05-28T14:18:49.998935+00:00"
   },
   {
-    "id": 1779774521788,
+    "id": 1779977929811,
     "action": "user_login",
     "message": {
-      "uz": "Foydalanuvchi token yangiladi (JWT) admin",
-      "ru": "Пользователь обновил токен (JWT) admin",
-      "en": "User refreshed token (JWT) admin"
+      "uz": "Foydalanuvchi tizimga kirdi admin",
+      "ru": "Пользователь вошел в систему admin",
+      "en": "User logged in admin"
     },
-    "created_at": "2026-05-26T05:48:41.788852+00:00"
+    "created_at": "2026-05-28T14:18:49.811831+00:00"
+  },
+  {
+    "id": 1779977929622,
+    "action": "user_login",
+    "message": {
+      "uz": "Foydalanuvchi tizimga kirdi admin",
+      "ru": "Пользователь вошел в систему admin",
+      "en": "User logged in admin"
+    },
+    "created_at": "2026-05-28T14:18:49.622282+00:00"
   }
 ]

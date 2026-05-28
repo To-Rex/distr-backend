@@ -74,7 +74,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="MXSoft Distr Dashboard",
     description="MXSoft User Controlling Dashboard",
-    version="1.0.0",
+    version="1.0.1",
     lifespan=lifespan,
 )
 app.state.db_connected = False
@@ -277,9 +277,17 @@ app.mount("/appstore/exports",
           StaticFiles(directory=str(APPSTORE_EXPORTS_DIR)), name="appstore-exports")
 
 if __name__ == "__main__":
-    import uvicorn
+    import asyncio
     from dotenv import load_dotenv
     load_dotenv()
+
+    # Run migrations BEFORE uvicorn starts (WatchFiles is not active yet)
+    try:
+        asyncio.run(create_all_tables())
+    except Exception:
+        pass
+
+    import uvicorn
     PORT = int(os.getenv("PORT", "8002"))
 
     uvicorn.run("app:app", host="0.0.0.0", port=PORT, reload=True)

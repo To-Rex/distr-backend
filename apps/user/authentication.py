@@ -1,8 +1,10 @@
+from datetime import datetime
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from apps.user.models import User, AccessToken
 from apps.user.jwt_handler import create_access_token as create_jwt_access, create_refresh_token
-from config.security import verify_password
+from config.security import verify_password, get_expiration_date
 
 
 async def authenticate(username: str, password: str, fcm_token: str | None, session: AsyncSession) -> User | None:
@@ -30,7 +32,7 @@ async def create_access_token(user: User, session: AsyncSession) -> AccessToken 
     return access_token
 
 
-async def create_jwt_tokens(user: User, session: AsyncSession) -> dict:
+async def create_jwt_tokens(user: User) -> dict:
     token_data = {
         "sub": str(user.id),
         "username": user.username,
@@ -39,21 +41,13 @@ async def create_jwt_tokens(user: User, session: AsyncSession) -> dict:
     jwt_access = create_jwt_access(token_data)
     refresh = create_refresh_token(token_data)
 
-    access_token = AccessToken(
-        user=user,
-        access_token=jwt_access,
-    )
-    session.add(access_token)
-    await session.commit()
-    await session.refresh(access_token)
-
     return {
-        "id": access_token.id,
-        "access_token": access_token.access_token,
+        "id": 0,
+        "access_token": jwt_access,
         "refresh_token": refresh,
         "token_type": "bearer",
-        "expires_in": access_token.expires_in,
-        "user_id": access_token.user_id,
-        "created_at": access_token.created_at,
-        "updated_at": access_token.updated_at,
+        "expires_in": get_expiration_date(),
+        "user_id": user.id,
+        "created_at": datetime.now(),
+        "updated_at": None,
     }
