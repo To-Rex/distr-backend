@@ -172,8 +172,11 @@
                     </div>
                 </div>
 
+                <button type="button" class="btn btn-outline" id="btn-test-current" onclick="testCurrentConnection()">
+                    Check Current Connection
+                </button>
                 <button type="button" class="btn btn-outline" id="btn-test" onclick="testConnection()">
-                    Test Connection
+                    Test New Connection
                 </button>
                 <button type="button" class="btn btn-primary" id="btn-save" onclick="saveConfig()">
                     Save &amp; Apply
@@ -254,6 +257,34 @@
             }
         }
 
+        async function testCurrentConnection() {
+            hideMessage();
+            setLoading('btn-test-current', 'Checking...', true);
+
+            try {
+                const res = await fetch('/setup/test-current', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                });
+                const result = await res.json();
+                if (result.success) {
+                    if (result.recovered) {
+                        showMessage('✓ Connection restored! Redirecting...', 'success');
+                        disableForm();
+                        setTimeout(function () { window.location.href = '/'; }, 2500);
+                    } else {
+                        showMessage('✓ Current connection is working!', 'success');
+                    }
+                } else {
+                    showMessage('✗ Current connection failed: ' + result.error, 'error');
+                }
+            } catch (e) {
+                showMessage('✗ Request failed: ' + e.message, 'error');
+            } finally {
+                resetButton('btn-test-current', 'Check Current Connection', 'btn-outline');
+            }
+        }
+
         function disableForm() {
             document.querySelectorAll('#db-form input, #db-form button').forEach(el => el.disabled = true);
         }
@@ -265,7 +296,8 @@
 
             hideMessage();
             setLoading('btn-save', 'Saving...', true);
-            setLoading('btn-test', 'Test Connection', false);
+            setLoading('btn-test', 'Test New Connection', false);
+            setLoading('btn-test-current', 'Check Current Connection', false);
 
             try {
                 const res = await fetch('/setup/save', {
@@ -290,17 +322,20 @@
                             'info'
                         );
                         resetButton('btn-save', 'Save & Apply', 'btn-primary');
-                        resetButton('btn-test', 'Test Connection', 'btn-outline');
+                        resetButton('btn-test', 'Test New Connection', 'btn-outline');
+                        resetButton('btn-test-current', 'Check Current Connection', 'btn-outline');
                     }
                 } else {
                     showMessage('✗ Save failed: ' + result.error, 'error');
                     resetButton('btn-save', 'Save & Apply', 'btn-primary');
-                    resetButton('btn-test', 'Test Connection', 'btn-outline');
+                    resetButton('btn-test', 'Test New Connection', 'btn-outline');
+                    resetButton('btn-test-current', 'Check Current Connection', 'btn-outline');
                 }
             } catch (e) {
                 showMessage('✗ Request failed: ' + e.message, 'error');
                 resetButton('btn-save', 'Save & Apply', 'btn-primary');
-                resetButton('btn-test', 'Test Connection', 'btn-outline');
+                resetButton('btn-test', 'Test New Connection', 'btn-outline');
+                resetButton('btn-test-current', 'Check Current Connection', 'btn-outline');
             }
         }
     </script>
