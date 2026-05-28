@@ -24,6 +24,8 @@ class Company(Base):
 
     users: Mapped[list["User"]] = relationship(
         "User", back_populates="company_rel")
+    branches: Mapped[list["Branch"]] = relationship(
+        "Branch", back_populates="company_rel")
     security_key_rel: Mapped["SecurityKey"] = relationship(
         "SecurityKey", back_populates="company_rel", uselist=False)
 

@@ -8,6 +8,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from apps.user.admin import UserAdmin
+from apps.branch.admin import BranchAdmin
 from apps.company.admin import CompanyAdmin, SecurityKeyAdmin
 from apps.location.admin import LocationAdmin
 from apps.app_version.admin import AppAdmin, VersionAdmin
@@ -110,6 +111,7 @@ admin = Admin(
 
 # Add it to the dashboard
 admin.add_view(UserAdmin)
+admin.add_view(BranchAdmin)
 admin.add_view(CompanyAdmin)
 admin.add_view(SecurityKeyAdmin)
 admin.add_view(LocationAdmin)

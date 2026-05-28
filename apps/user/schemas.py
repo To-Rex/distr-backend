@@ -17,6 +17,7 @@ class UserBase(BaseModel):
     user_type: Optional[UserType] = None
     user_status: Optional[UserStatus] = None
     company_id: Optional[int] = None
+    branch_id: Optional[int] = None
     manager_id: Optional[int] = None
 
     class Config:
@@ -34,6 +35,7 @@ class UserCreate(BaseModel):
     user_type: Optional[UserType] = None
     user_status: Optional[UserStatus] = None
     company_id: Optional[int] = None
+    branch_id: Optional[int] = None
     manager_id: Optional[int] = None
     user_1c_id: Optional[int] = None
     user_1c_login: Optional[str] = None
@@ -51,6 +53,7 @@ class UserUpdate(BaseModel):
     user_type: Optional[UserType] = None
     user_status: Optional[UserStatus] = None
     company_id: Optional[int] = None
+    branch_id: Optional[int] = None
     manager_id: Optional[int] = None
     user_1c_id: Optional[int] = None
     user_1c_login: Optional[str] = None
@@ -68,6 +71,7 @@ class UserPartialUpdate(BaseModel):
     user_type: Optional[UserType] = None
     user_status: Optional[UserStatus] = None
     company_id: Optional[int] = None
+    branch_id: Optional[int] = None
     manager_id: Optional[int] = None
 
 
@@ -105,6 +109,7 @@ class UserResponse(BaseModel):
     photo: Optional[str] = None
     user_type: UserType
     company_id: Optional[int] = None
+    branch_id: Optional[int] = None
     company_rel: Optional[CompanyResponse] = None
     manager: Optional["ManagerRead"] = None
     manager_id: Optional[int] = None
