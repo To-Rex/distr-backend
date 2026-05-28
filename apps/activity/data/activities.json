@@ -1,5 +1,25 @@
 [
   {
+    "id": 1779969801487,
+    "action": "user_login",
+    "message": {
+      "uz": "Foydalanuvchi tizimga kirdi admin",
+      "ru": "Пользователь вошел в систему admin",
+      "en": "User logged in admin"
+    },
+    "created_at": "2026-05-28T12:03:21.487510+00:00"
+  },
+  {
+    "id": 1779969667945,
+    "action": "user_registered",
+    "message": {
+      "uz": "Foydalanuvchi ro'yxatdan o'tdi admin",
+      "ru": "Пользователь зарегистрирован admin",
+      "en": "User registered admin"
+    },
+    "created_at": "2026-05-28T12:01:07.945945+00:00"
+  },
+  {
     "id": 1779967960592,
     "action": "user_login",
     "message": {
@@ -38,25 +58,5 @@
       "en": "User refreshed token (JWT) admin"
     },
     "created_at": "2026-05-26T05:48:41.788852+00:00"
-  },
-  {
-    "id": 1779774335375,
-    "action": "user_login",
-    "message": {
-      "uz": "Foydalanuvchi tizimga kirdi admin",
-      "ru": "Пользователь вошел в систему admin",
-      "en": "User logged in admin"
-    },
-    "created_at": "2026-05-26T05:45:35.375766+00:00"
-  },
-  {
-    "id": 1779774305235,
-    "action": "user_login",
-    "message": {
-      "uz": "Foydalanuvchi tizimga kirdi (legacy) admin",
-      "ru": "Пользователь вошел в систему (legacy) admin",
-      "en": "User logged in (legacy) admin"
-    },
-    "created_at": "2026-05-26T05:45:05.235110+00:00"
   }
 ]
