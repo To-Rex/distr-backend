@@ -72,7 +72,7 @@ def save_db_url(host: str, port: int, user: str, password: str, database: str) -
 
 
 def get_current_db_params() -> dict:
-    url = os.getenv("DATABASE_URL", "")
+    url = os.getenv("DATABASE_URL", "") or _db.DATABASE_URL
     return _parse_db_url(url)
 
 
@@ -94,6 +94,15 @@ async def apply_and_reconnect(
     except Exception:
         pass
 
+    _rebuild_engine(db_url, admin_obj)
+    await _db.create_all_tables()
+
+    return True, True, db_url, None
+
+
+def _rebuild_engine(db_url: str, admin_obj=None) -> None:
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
     new_engine = create_async_engine(db_url)
     _db.DATABASE_URL = db_url
     _db.engine = new_engine
@@ -101,12 +110,48 @@ async def apply_and_reconnect(
         new_engine, expire_on_commit=False, class_=AsyncSession
     )
 
-    await _db.create_all_tables()
-
     if admin_obj is not None:
         admin_obj.engine = new_engine
         for view in getattr(admin_obj, "_views", []):
             if hasattr(view, "engine"):
                 view.engine = new_engine
 
-    return True, True, db_url, None
+
+async def recover_current_engine(admin_obj=None) -> bool:
+    params = get_current_db_params()
+    if not params:
+        return False
+
+    ok, _ = await test_connection(
+        host=params["host"],
+        port=int(params["port"]),
+        user=params["user"],
+        password=params["password"],
+        database=params["database"],
+    )
+    if not ok:
+        return False
+
+    db_url = build_db_url(
+        host=params["host"],
+        port=int(params["port"]),
+        user=params["user"],
+        password=params["password"],
+        database=params["database"],
+    )
+
+    os.environ["DATABASE_URL"] = db_url
+
+    try:
+        await _db.engine.dispose()
+    except Exception:
+        pass
+
+    _rebuild_engine(db_url, admin_obj)
+
+    try:
+        await _db.create_all_tables()
+    except Exception:
+        pass
+
+    return True

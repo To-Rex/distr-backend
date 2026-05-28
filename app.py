@@ -16,7 +16,7 @@ from apps.notification.admin import NotificationAdmin, NotificationUserStatusAdm
 from apps.alembic_version.admin import AlembicVersionAdmin
 from config.dashboard_security import authentication_backend
 from config.database import create_all_tables, engine
-from config.db_setup import apply_and_reconnect, test_connection, get_current_db_params
+from config.db_setup import apply_and_reconnect, recover_current_engine, test_connection, get_current_db_params
 from apps.routes import main_router
 from apps.app_store.routes import app_store_router
 from apps.app_store.config import EXPORTS_DIR as APPSTORE_EXPORTS_DIR
@@ -145,15 +145,14 @@ class DBSettings(BaseModel):
 
 @app.get("/setup")
 async def setup_page(request: Request):
-    params = get_current_db_params()
     template = _setup_jinja_env.get_template("setup_db.html")
     html = template.render({
         "request": request,
-        "host": params.get("host", ""),
-        "port": params.get("port", "5432"),
-        "user": params.get("user", "postgres"),
-        "password": params.get("password", ""),
-        "database": params.get("database", ""),
+        "host": "",
+        "port": "5432",
+        "user": "",
+        "password": "",
+        "database": "",
     })
     return HTMLResponse(content=html)
 
@@ -170,6 +169,26 @@ async def setup_test(settings: DBSettings):
     return JSONResponse(
         {"success": True} if ok else {"success": False, "error": err}
     )
+
+
+@app.post("/setup/test-current")
+async def setup_test_current(request: Request):
+    params = get_current_db_params()
+    if not params:
+        return JSONResponse({"success": False, "error": "No current config found"})
+    ok, err = await test_connection(
+        host=params["host"],
+        port=int(params["port"]),
+        user=params["user"],
+        password=params["password"],
+        database=params["database"],
+    )
+    if ok:
+        recovered = await recover_current_engine(admin_obj=admin)
+        if recovered:
+            request.app.state.db_connected = True
+        return JSONResponse({"success": True, "recovered": recovered})
+    return JSONResponse({"success": False, "error": err})
 
 
 @app.post("/setup/save")
@@ -210,11 +229,18 @@ class DBSetupMiddleware(BaseHTTPMiddleware):
         if now - _last_health_check > _HEALTH_CHECK_INTERVAL:
             _last_health_check = now
             try:
-                from config.database import check_db_alive
+                from config.database import check_db_alive, engine
                 alive = await check_db_alive()
+                previous = request.app.state.db_connected
                 request.app.state.db_connected = alive
+                if previous and not alive:
+                    try:
+                        await engine.dispose()
+                    except Exception:
+                        pass
             except Exception:
-                request.app.state.db_connected = False
+                if request.app.state.db_connected:
+                    request.app.state.db_connected = False
 
         path = request.url.path
         db_ok = request.app.state.db_connected
