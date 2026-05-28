@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from .activity import routes as activity_routes
 from .alembic_version import routes as alembic_version_routes
 from .app_version import routes as app_version_routes
+from .branch import routes as branch_routes
 from .company import routes as company_routes
 from .device import routes as device_routes
 from .location import routes as location_routes
@@ -20,6 +21,7 @@ main_router = APIRouter(
 
 main_router.include_router(user_routes.router)
 main_router.include_router(user_manager_routes.router)
+main_router.include_router(branch_routes.router)
 main_router.include_router(location_routes.router)
 main_router.include_router(app_version_routes.router)
 main_router.include_router(working_session_routes.router)

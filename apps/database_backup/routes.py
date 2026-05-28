@@ -178,6 +178,7 @@ async def _perform_import(file: UploadFile, session: AsyncSession, verbose: bool
         cmd = [
             pg_restore,
             "--no-owner",
+            "--no-privileges",
             "-h", host,
             "-p", port,
             "-U", user,

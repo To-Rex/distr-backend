@@ -40,6 +40,20 @@ async def create_all_tables():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
+    async with engine.begin() as conn:
+        await conn.execute(text("""
+            DO $$
+            BEGIN
+                -- Add branch_id to users table if missing
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name='users' AND column_name='branch_id'
+                ) THEN
+                    ALTER TABLE users ADD COLUMN branch_id INTEGER REFERENCES branches(id);
+                END IF;
+            END $$;
+        """))
+
 
 async def check_db_alive() -> bool:
     try:

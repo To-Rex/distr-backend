@@ -9,6 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.orm import relationship
 
 from apps.base.models import Base
+from apps.branch.models import Branch
 from apps.company.models import Company
 from apps.location.models import Location
 from apps.working_session_tracking.models import WorkingSession
@@ -89,6 +90,11 @@ class User(Base):
     # 2. Add the relationship object
     company_rel: Mapped[Optional["Company"]] = relationship(
         "Company", back_populates="users")
+
+    branch_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("branches.id"), nullable=True)
+    branch_rel: Mapped[Optional["Branch"]] = relationship(
+        "Branch", back_populates="users")
 
     # 1. The Foreign Key pointing to another user's ID
     manager_id: Mapped[Optional[int]] = mapped_column(
