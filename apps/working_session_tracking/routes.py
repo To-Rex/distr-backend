@@ -1,14 +1,19 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from apps.working_session_tracking.models import WorkingSession
 from apps.working_session_tracking.schemas import (
     WorkingSessionCreate,
     WorkingSessionResponse,
+    WorkerSessionResponse,
 )
 from apps.user.models import User
 from apps.user.di import get_current_user_by_token
+from apps.user.schemas import UserResponse
 from config.database import get_async_session
 
 router = APIRouter(
@@ -41,13 +46,37 @@ async def create_working_session(
     return new_session
 
 
-@router.get("", response_model=list[WorkingSessionResponse])
+@router.get("", response_model=list[WorkerSessionResponse])
 async def list_working_sessions(
     session: AsyncSession = Depends(get_async_session),
     current_user: User = Depends(get_current_user_by_token),
 ):
-    result = await session.execute(select(WorkingSession))
-    return result.scalars().all()
+    earliest_subq = (
+        select(
+            WorkingSession.user_id,
+            func.min(WorkingSession.session).label("min_session"),
+        )
+        .where(func.date(WorkingSession.session) == date.today())
+        .group_by(WorkingSession.user_id)
+        .subquery()
+    )
+
+    result = await session.execute(
+        select(WorkingSession)
+        .options(joinedload(WorkingSession.user_rel))
+        .join(
+            earliest_subq,
+            (WorkingSession.user_id == earliest_subq.c.user_id)
+            & (WorkingSession.session == earliest_subq.c.min_session),
+        )
+    )
+    return [
+        WorkerSessionResponse(
+            user=UserResponse.model_validate(ws.user_rel),
+            session=WorkingSessionResponse.model_validate(ws),
+        )
+        for ws in result.scalars().all()
+    ]
 
 
 @router.get("/{session_id}", response_model=WorkingSessionResponse)
