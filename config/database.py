@@ -129,7 +129,6 @@ def _migration_lock_valid() -> bool:
         _MIGRATION_LOCK.unlink(missing_ok=True)
         return False
 
-
 async def create_all_tables(force: bool = False):
     global _migration_done
     if not force and (_migration_done or _migration_lock_valid()):
@@ -149,7 +148,6 @@ async def create_all_tables(force: bool = False):
     except Exception:
         pass
 
-
 async def check_db_alive() -> bool:
     try:
         async with engine.connect() as conn:
@@ -157,7 +155,6 @@ async def check_db_alive() -> bool:
         return True
     except Exception:
         return False
-
 
 async def dispose_engine():
     await engine.dispose()
