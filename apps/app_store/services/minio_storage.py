@@ -20,14 +20,20 @@ _client: Optional[Minio] = None
 def _get_client() -> Minio:
     global _client
     if _client is None:
-        _client = Minio(
+        client = Minio(
             endpoint=MINIO_ENDPOINT,
             access_key=MINIO_ACCESS_KEY,
             secret_key=MINIO_SECRET_KEY,
             secure=MINIO_SECURE,
         )
-        if not _client.bucket_exists(MINIO_BUCKET):
-            _client.make_bucket(MINIO_BUCKET)
+        try:
+            if not client.bucket_exists(MINIO_BUCKET):
+                client.make_bucket(MINIO_BUCKET)
+        except Exception as e:
+            raise ConnectionError(
+                f"MinIO ulanishda xato ({MINIO_ENDPOINT}): {e}"
+            ) from e
+        _client = client
     return _client
 
 
