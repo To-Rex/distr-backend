@@ -14,18 +14,17 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL", "") or "postgresql+asyncpg://localhost:5432/postgres"
 
-# Only install PostgreSQL client on Linux (not macOS)
-if platform.system() == "Linux":
-    os.system("""
-        apt update -qq && apt install -y curl ca-certificates gnupg lsb-release &&
-        curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
-            | gpg --dearmor -o /usr/share/keyrings/postgresql.gpg &&
-        echo "deb [signed-by=/usr/share/keyrings/postgresql.gpg] \
-            https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
-            > /etc/apt/sources.list.d/pgdg.list &&
-        apt update -qq &&
-        apt install -y postgresql-client-18
-    """)
+# Only install PostgreSQL client on Linux if not already present
+if platform.system() == "Linux" and os.system("which psql >/dev/null 2>&1") != 0:
+    os.system(
+        "apt update -qq && apt install -y -qq curl ca-certificates gnupg lsb-release "
+        "&& curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc "
+        "| gpg --batch --dearmor -o /usr/share/keyrings/postgresql.gpg 2>/dev/null "
+        "&& echo 'deb [signed-by=/usr/share/keyrings/postgresql.gpg] "
+        "https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main' "
+        "> /etc/apt/sources.list.d/pgdg.list "
+        "&& apt update -qq && apt install -y -qq postgresql-client-18"
+    )
 
 
 engine = create_async_engine(DATABASE_URL, pool_size=10, max_overflow=20,
