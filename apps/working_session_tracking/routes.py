@@ -1,9 +1,8 @@
-from datetime import date
-
+from datetime import date, timedelta
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, defaultload, selectinload
 
 from apps.working_session_tracking.models import WorkingSession
 from apps.working_session_tracking.schemas import (
@@ -56,14 +55,19 @@ async def list_working_sessions(
             WorkingSession.user_id,
             func.min(WorkingSession.session).label("min_session"),
         )
-        .where(func.date(WorkingSession.session) == date.today())
+        #.where(func.date(WorkingSession.session) == date.today())
+        .where(func.date(WorkingSession.session) == (date.today() - timedelta(days=1)))
         .group_by(WorkingSession.user_id)
         .subquery()
     )
 
     result = await session.execute(
         select(WorkingSession)
-        .options(joinedload(WorkingSession.user_rel))
+        .options(
+            joinedload(WorkingSession.user_rel),
+            defaultload(WorkingSession.user_rel).selectinload(User.company_rel),
+            defaultload(WorkingSession.user_rel).selectinload(User.manager),
+        )
         .join(
             earliest_subq,
             (WorkingSession.user_id == earliest_subq.c.user_id)
