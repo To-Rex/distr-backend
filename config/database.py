@@ -201,6 +201,16 @@ def _migration_lock_valid() -> bool:
 
 async def create_all_tables(force: bool = False):
     global _migration_done
+
+    # Always create/update tables from ORM models (create missing tables,
+    # but does NOT add columns to existing tables — that's handled below).
+    from apps.base.models import Base
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+    except Exception as e:
+        print(f"[!] Base.metadata.create_all failed: {e}")
+
     if not force and (_migration_done or _migration_lock_valid()):
         if _migration_done:
             print("[i] Alembic: migration already applied, skipping")
