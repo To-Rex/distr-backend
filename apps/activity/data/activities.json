@@ -1,5 +1,15 @@
 [
   {
+    "id": 1780043239910,
+    "action": "user_login",
+    "message": {
+      "uz": "Foydalanuvchi tizimga kirdi admin",
+      "ru": "Пользователь вошел в систему admin",
+      "en": "User logged in admin"
+    },
+    "created_at": "2026-05-29T08:27:19.910489+00:00"
+  },
+  {
     "id": 1780034067217,
     "action": "company_created",
     "message": {
@@ -48,15 +58,5 @@
       "en": "User logged in admin"
     },
     "created_at": "2026-05-28T14:18:50.371255+00:00"
-  },
-  {
-    "id": 1779977930142,
-    "action": "user_login",
-    "message": {
-      "uz": "Foydalanuvchi tizimga kirdi admin",
-      "ru": "Пользователь вошел в систему admin",
-      "en": "User logged in admin"
-    },
-    "created_at": "2026-05-28T14:18:50.142298+00:00"
   }
 ]
