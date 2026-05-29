@@ -20,8 +20,8 @@ if platform.system() == "Linux" and os.system("which psql >/dev/null 2>&1") != 0
         "apt update -qq && apt install -y -qq curl ca-certificates gnupg lsb-release "
         "&& curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc "
         "| gpg --batch --dearmor -o /usr/share/keyrings/postgresql.gpg 2>/dev/null "
-        "&& echo 'deb [signed-by=/usr/share/keyrings/postgresql.gpg] "
-        "https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main' "
+        '&& echo "deb [signed-by=/usr/share/keyrings/postgresql.gpg] '
+        "https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main\" "
         "> /etc/apt/sources.list.d/pgdg.list "
         "&& apt update -qq && apt install -y -qq postgresql-client-18"
     )
@@ -88,9 +88,17 @@ async def _ensure_alembic_stamp():
                             {"v": head_rev},
                         )
                     print(f"[+] Alembic: jumped to head {head_rev} (tables already exist)")
-        return
+        elif not head_rev:
+            # Stale stamp with no revision files — clear so autogenerate can start fresh
+            async with engine.begin() as conn:
+                await conn.execute(text("DELETE FROM alembic_version"))
+            print(f"[+] Alembic: cleared stale stamp {row[0]} (no revision files)")
+            # fall through to create a fresh stamp below
+        else:
+            # row matches head_rev — nothing to do
+            return
 
-    # No stamp — create initial revision and stamp with base
+    # No stamp or stale stamp cleared — create an initial revision and stamp
     rev = _create_empty_revision()
     if rev is None:
         rev = script.get_base()
