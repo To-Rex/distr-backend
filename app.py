@@ -249,7 +249,7 @@ class DBSetupMiddleware(BaseHTTPMiddleware):
         is_setup = path.startswith("/setup")
         is_excluded = any(path.startswith(p) for p in ("/static", "/favicon.ico"))
 
-        if db_ok and is_setup:
+        if db_ok and is_setup and path.rstrip("/") not in ("/setup/test", "/setup/test-current"):
             return RedirectResponse(url="/", status_code=302)
 
         if not db_ok and not is_setup and not is_excluded:
