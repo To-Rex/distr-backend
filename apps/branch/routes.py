@@ -24,12 +24,14 @@ async def create_branch(
     if current_user.user_type not in [UserType.SUPERADMIN, UserType.ADMIN]:
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
-    if branch_data.company_id:
+    if branch_data.company_id is not None:
+        if not (0 <= branch_data.company_id <= 2147483647):
+            raise HTTPException(status_code=400, detail="Invalid company_id")
         result = await session.execute(
             select(Company).where(Company.id == branch_data.company_id)
         )
         if not result.scalar_one_or_none():
-            raise HTTPException(status_code=404, detail="Company not found")
+            raise HTTPException(status_code=400, detail="Company not found")
 
     new_branch = Branch(**branch_data.model_dump())
     session.add(new_branch)
@@ -76,6 +78,15 @@ async def update_branch(
     branch = result.scalar_one_or_none()
     if not branch:
         raise HTTPException(status_code=404, detail="Branch not found")
+
+    if branch_update.company_id is not None:
+        if not (0 <= branch_update.company_id <= 2147483647):
+            raise HTTPException(status_code=400, detail="Invalid company_id")
+        company_result = await session.execute(
+            select(Company).where(Company.id == branch_update.company_id)
+        )
+        if not company_result.scalar_one_or_none():
+            raise HTTPException(status_code=400, detail="Company not found")
 
     update_data = branch_update.model_dump(exclude_unset=True)
     for field, value in update_data.items():
