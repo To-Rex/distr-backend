@@ -1,7 +1,10 @@
 import asyncio
+import atexit
 import os
 import platform
+import tempfile
 from collections.abc import AsyncGenerator
+from pathlib import Path
 
 from dotenv import load_dotenv
 from sqlalchemy import text
@@ -111,11 +114,38 @@ async def _ensure_alembic_stamp():
                 print(f"[+] Alembic: jumped to head {head_rev} (tables already exist)")
 
 
-async def create_all_tables():
+_migration_done = False
+_MIGRATION_LOCK = Path(tempfile.gettempdir()) / "mxsoft_migration.lock"
+
+
+def _migration_lock_valid() -> bool:
+    if not _MIGRATION_LOCK.exists():
+        return False
+    try:
+        pid = int(_MIGRATION_LOCK.read_text().strip())
+        os.kill(pid, 0)
+        return True
+    except (OSError, ValueError):
+        _MIGRATION_LOCK.unlink(missing_ok=True)
+        return False
+
+
+async def create_all_tables(force: bool = False):
+    global _migration_done
+    if not force and (_migration_done or _migration_lock_valid()):
+        if _migration_done:
+            print("[i] Alembic: migration already applied, skipping")
+        elif _migration_lock_valid():
+            print("[i] Alembic: migration already applied (lock file), skipping")
+        _migration_done = True
+        return
     try:
         await _ensure_alembic_stamp()
         from config.auto_migration import run_auto_migration
         await asyncio.to_thread(run_auto_migration)
+        _migration_done = True
+        _MIGRATION_LOCK.touch()
+        _MIGRATION_LOCK.write_text(f"{os.getpid()}")
     except Exception:
         pass
 

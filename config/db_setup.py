@@ -95,7 +95,7 @@ async def apply_and_reconnect(
         pass
 
     _rebuild_engine(db_url, admin_obj)
-    await _db.create_all_tables()
+    await _db.create_all_tables(force=True)
 
     return True, True, db_url, None
 
@@ -150,7 +150,7 @@ async def recover_current_engine(admin_obj=None) -> bool:
     _rebuild_engine(db_url, admin_obj)
 
     try:
-        await _db.create_all_tables()
+        await _db.create_all_tables(force=True)
     except Exception:
         pass
 
