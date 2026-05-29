@@ -107,8 +107,8 @@ def run_auto_migration() -> None:
     # ---- Step 1: Apply any pending (unapplied) migrations ----
     try:
         command.upgrade(cfg, "head")
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[!] Alembic: pending migration apply failed — {e}")
 
     # ---- Step 2: Get current head before autogenerate ----
     old_head = script.get_current_head()
@@ -116,7 +116,8 @@ def run_auto_migration() -> None:
     # ---- Step 3: Generate autogenerate revision ----
     try:
         command.revision(cfg, autogenerate=True, message="auto_migration")
-    except Exception:
+    except Exception as e:
+        print(f"[!] Alembic: autogenerate failed — {e}")
         return  # no new changes detected
 
     # ---- Step 4: Find the new migration file by its revision ID ----
