@@ -94,6 +94,19 @@ def _classify_migration(filepath: str) -> tuple[list[str], list[str]]:
     return safe, dangerous
 
 
+def _make_alembic_config() -> Config | None:
+    """Create an Alembic Config with robust script_location handling."""
+    try:
+        cfg = Config("alembic.ini")
+        # Ensure script_location is set (it's in the .ini but Config may not find it)
+        if not cfg.get_main_option("script_location"):
+            cfg.set_main_option("script_location", "migrations")
+        return cfg
+    except Exception as e:
+        print(f"[!] Alembic: could not load config — {e}")
+        return None
+
+
 def run_auto_migration() -> None:
     """
     Run Alembic autogenerate and auto-apply only safe operations.
@@ -101,8 +114,14 @@ def run_auto_migration() -> None:
     Safe: add_column, create_table, create_index, create_*_constraint
     Dangerous (skipped): drop_*, alter_column, rename_*
     """
-    cfg = Config("alembic.ini")
-    script = ScriptDirectory.from_config(cfg)
+    cfg = _make_alembic_config()
+    if cfg is None:
+        return
+    try:
+        script = ScriptDirectory.from_config(cfg)
+    except Exception as e:
+        print(f"[!] Alembic: could not create ScriptDirectory — {e}")
+        return
 
     # ---- Step 1: Apply any pending (unapplied) migrations ----
     try:
