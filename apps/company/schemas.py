@@ -2,6 +2,8 @@ from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field
 
+from apps.branch.schemas import BranchResponse
+
 
 class CompanyBase(BaseModel):
     name: str = Field(..., max_length=255)
@@ -26,6 +28,10 @@ class CompanyResponse(CompanyBase):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class CompanyWithBranchesResponse(CompanyResponse):
+    branches: list[BranchResponse] = []
 
 
 class SecurityKeyBase(BaseModel):

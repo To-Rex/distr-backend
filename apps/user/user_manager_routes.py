@@ -49,6 +49,7 @@ async def list_users(
     query = select(User).options(
         selectinload(User.manager),
         selectinload(User.company_rel),
+        selectinload(User.branch_rel),
         selectinload(User.agents),
     )
 
@@ -82,6 +83,7 @@ async def get_user(
         .options(
             selectinload(User.manager),
             selectinload(User.company_rel),
+            selectinload(User.branch_rel),
             selectinload(User.agents),
         )
         .where(User.id == user_id)
@@ -126,6 +128,7 @@ async def create_user(
         .options(
             selectinload(User.manager),
             selectinload(User.company_rel),
+            selectinload(User.branch_rel),
             selectinload(User.agents),
         )
         .where(User.id == new_user.id)
@@ -169,6 +172,7 @@ async def update_user(
         .options(
             selectinload(User.manager),
             selectinload(User.company_rel),
+            selectinload(User.branch_rel),
             selectinload(User.agents),
         )
         .where(User.id == user_id)
