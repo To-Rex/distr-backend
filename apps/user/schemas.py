@@ -3,6 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
+from apps.branch.schemas import BranchResponse
 from apps.company.schemas import CompanyResponse
 from apps.user.models import UserStatus, UserType  # Import your Enum classes
 
@@ -95,6 +96,7 @@ class ManagerRead(BaseModel):
     photo: Optional[str] = None
     user_type: UserType
     company_rel: Optional[CompanyResponse] = None
+    branch_rel: Optional[BranchResponse] = None
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)
 
@@ -111,6 +113,7 @@ class UserResponse(BaseModel):
     company_id: Optional[int] = None
     branch_id: Optional[int] = None
     company_rel: Optional[CompanyResponse] = None
+    branch_rel: Optional[BranchResponse] = None
     manager: Optional["ManagerRead"] = None
     manager_id: Optional[int] = None
     user_1c_id: Optional[int] = None

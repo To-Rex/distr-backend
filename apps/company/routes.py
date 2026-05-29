@@ -1,12 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
+from apps.branch.models import Branch
 from apps.company.models import Company, SecurityKey
 from apps.company.schemas import (
     CompanyCreate,
     CompanyUpdate,
     CompanyResponse,
+    CompanyWithBranchesResponse,
     SecurityKeyCreate,
     SecurityKeyUpdate,
     SecurityKeyResponse,
@@ -50,24 +53,33 @@ async def create_company(
     return new_company
 
 
-@router.get("/", response_model=list[CompanyResponse])
+@router.get("/", response_model=list[CompanyWithBranchesResponse])
 async def list_companies(
     session: AsyncSession = Depends(get_async_session),
     current_user: User = Depends(get_current_user_by_token),
     skip: int = 0,
     limit: int = 100,
 ):
-    result = await session.execute(select(Company).offset(skip).limit(limit))
+    result = await session.execute(
+        select(Company)
+        .options(selectinload(Company.branches))
+        .offset(skip)
+        .limit(limit)
+    )
     return result.scalars().all()
 
 
-@router.get("/{company_id}", response_model=CompanyResponse)
+@router.get("/{company_id}", response_model=CompanyWithBranchesResponse)
 async def get_company(
     company_id: int,
     session: AsyncSession = Depends(get_async_session),
     current_user: User = Depends(get_current_user_by_token),
 ):
-    result = await session.execute(select(Company).where(Company.id == company_id))
+    result = await session.execute(
+        select(Company)
+        .options(selectinload(Company.branches))
+        .where(Company.id == company_id)
+    )
     company = result.scalar_one_or_none()
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")

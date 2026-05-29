@@ -18,7 +18,11 @@ bearer_scheme = HTTPBearer(auto_error=False)
 async def _resolve_user_by_id(user_id: int, session: AsyncSession) -> User | None:
     query = (
         select(User)
-        .options(selectinload(User.manager), selectinload(User.company_rel))
+        .options(
+            selectinload(User.manager),
+            selectinload(User.company_rel),
+            selectinload(User.branch_rel),
+        )
         .where(User.id == user_id)
     )
     result = await session.execute(query)
@@ -30,7 +34,8 @@ async def _resolve_user_by_legacy_token(token: str, session: AsyncSession) -> Us
         select(AccessToken)
         .options(
             selectinload(AccessToken.user).selectinload(User.manager),
-            selectinload(AccessToken.user).selectinload(User.company_rel)
+            selectinload(AccessToken.user).selectinload(User.company_rel),
+            selectinload(AccessToken.user).selectinload(User.branch_rel),
         )
         .where(
             AccessToken.access_token == token,
