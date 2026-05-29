@@ -11,7 +11,18 @@ router = APIRouter(prefix="/auth", tags=["AppStore Auth"])
 
 @router.post("/login")
 def login(body: LoginRequest):
-    result = AuthService.login(body.username, body.password)
+    try:
+        result = AuthService.login(body.username, body.password)
+    except ConnectionError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=error_response(f"Saqlash xizmati bilan ulanib bo'lmadi: {e}"),
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=error_response(f"Ichki xato: {e}"),
+        )
     if not result:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
