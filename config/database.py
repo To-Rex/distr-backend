@@ -114,6 +114,69 @@ async def _ensure_alembic_stamp():
                 print(f"[+] Alembic: jumped to head {head_rev} (tables already exist)")
 
 
+async def _sync_missing_columns():
+    """Add any columns defined in ORM models that are missing from actual DB tables.
+
+    This is a fallback for when Alembic autogenerate fails or is unavailable.
+    Only handles simple column types (no foreign keys, no enums — those are
+    assumed to already exist or be created by create_all).
+    """
+    import sqlalchemy as sa
+    from apps.base.models import Base
+
+    for table_name, table in Base.metadata.tables.items():
+        try:
+            async with engine.connect() as conn:
+                result = await conn.execute(
+                    text(
+                        "SELECT column_name FROM information_schema.columns "
+                        "WHERE table_name = :t"
+                    ),
+                    {"t": table_name},
+                )
+                existing_cols = {row[0] for row in result}
+        except Exception as e:
+            print(f"[!] Column sync: could not read columns for {table_name} — {e}")
+            continue
+
+        for col in table.columns:
+            if col.name in existing_cols:
+                continue
+
+            col_type = col.type
+
+            if isinstance(col_type, (sa.Enum, sa.Variant)):
+                continue
+
+            if isinstance(col_type, sa.Integer):
+                raw_type = "INTEGER"
+            elif isinstance(col_type, sa.String):
+                raw_type = f"VARCHAR({col_type.length or 255})"
+            elif isinstance(col_type, sa.DateTime):
+                raw_type = "TIMESTAMP WITHOUT TIME ZONE"
+            elif isinstance(col_type, sa.Boolean):
+                raw_type = "BOOLEAN"
+            elif isinstance(col_type, sa.Text):
+                raw_type = "TEXT"
+            elif isinstance(col_type, sa.Float):
+                raw_type = "FLOAT"
+            elif isinstance(col_type, sa.Numeric):
+                raw_type = "NUMERIC"
+            else:
+                print(f"[!] Column sync: unsupported type {type(col_type).__name__} for {table_name}.{col.name}, skipping")
+                continue
+
+            nullable_sql = "NULL" if col.nullable else "NOT NULL"
+
+            alter_sql = f'ALTER TABLE "{table_name}" ADD COLUMN "{col.name}" {raw_type} {nullable_sql}'
+            try:
+                async with engine.begin() as conn:
+                    await conn.execute(text(alter_sql))
+                print(f"[+] Column sync: added {table_name}.{col.name} ({raw_type})")
+            except Exception as e:
+                print(f"[!] Column sync: failed to add {table_name}.{col.name} — {e}")
+
+
 _migration_done = False
 _MIGRATION_LOCK = Path(tempfile.gettempdir()) / "mxsoft_migration.lock"
 
@@ -142,11 +205,17 @@ async def create_all_tables(force: bool = False):
         await _ensure_alembic_stamp()
         from config.auto_migration import run_auto_migration
         await asyncio.to_thread(run_auto_migration)
-        _migration_done = True
-        _MIGRATION_LOCK.touch()
-        _MIGRATION_LOCK.write_text(f"{os.getpid()}")
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[!] Alembic auto_migration failed: {e}")
+
+    try:
+        await _sync_missing_columns()
+    except Exception as e:
+        print(f"[!] Column sync failed: {e}")
+
+    _migration_done = True
+    _MIGRATION_LOCK.touch()
+    _MIGRATION_LOCK.write_text(f"{os.getpid()}")
 
 async def check_db_alive() -> bool:
     try:
