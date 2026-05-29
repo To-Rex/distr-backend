@@ -118,9 +118,10 @@ async def login(
         })
         return tokens
 
-    except HTTPException as e:
+    except HTTPException:
         raise
     except Exception as e:
+        print(f"LOGIN ERROR: {type(e).__name__}: {e}")
         await session.rollback()
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
