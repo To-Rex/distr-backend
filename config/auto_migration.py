@@ -95,16 +95,29 @@ def _classify_migration(filepath: str) -> tuple[list[str], list[str]]:
 
 
 def _make_alembic_config() -> Config | None:
-    """Create an Alembic Config with robust script_location handling."""
-    try:
-        cfg = Config("alembic.ini")
-        # Ensure script_location is set (it's in the .ini but Config may not find it)
-        if not cfg.get_main_option("script_location"):
-            cfg.set_main_option("script_location", "migrations")
-        return cfg
-    except Exception as e:
-        print(f"[!] Alembic: could not load config — {e}")
-        return None
+    """Create an Alembic Config, searching for alembic.ini in likely locations."""
+    import sys
+    likely_dirs = [
+        os.getcwd(),
+        os.path.dirname(os.path.abspath(__file__)),   # config/
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),  # project root
+    ]
+    for d in likely_dirs:
+        ini_path = os.path.join(d, "alembic.ini")
+        if os.path.isfile(ini_path):
+            try:
+                cfg = Config(ini_path)
+                if not cfg.get_main_option("script_location"):
+                    cfg.set_main_option("script_location",
+                                        os.path.join(os.path.dirname(ini_path), "migrations"))
+                return cfg
+            except Exception as e:
+                print(f"[!] Alembic: config at {ini_path} failed — {e}")
+
+    cfg = Config()
+    cfg.set_main_option("script_location", "migrations")
+    cfg.set_main_option("sqlalchemy.url", "placeholder")
+    return cfg
 
 
 def run_auto_migration() -> None:
