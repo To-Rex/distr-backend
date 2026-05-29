@@ -63,10 +63,17 @@ async def _ensure_alembic_stamp():
         result = await conn.execute(text("SELECT version_num FROM alembic_version"))
         row = result.fetchone()
 
-    from alembic.config import Config
+    from config.auto_migration import _make_alembic_config
+    cfg = _make_alembic_config()
+    if cfg is None:
+        print("[!] Alembic: cannot stamp — config unavailable")
+        return
     from alembic.script import ScriptDirectory
-    cfg = Config("alembic.ini")
-    script = ScriptDirectory.from_config(cfg)
+    try:
+        script = ScriptDirectory.from_config(cfg)
+    except Exception as e:
+        print(f"[!] Alembic: cannot create ScriptDirectory — {e}")
+        return
     head_rev = script.get_current_head()
 
     if row:
@@ -145,7 +152,7 @@ async def _sync_missing_columns():
 
             col_type = col.type
 
-            if isinstance(col_type, (sa.Enum, sa.Variant)):
+            if isinstance(col_type, sa.Enum):
                 continue
 
             if isinstance(col_type, sa.Integer):
@@ -200,22 +207,24 @@ async def create_all_tables(force: bool = False):
         elif _migration_lock_valid():
             print("[i] Alembic: migration already applied (lock file), skipping")
         _migration_done = True
-        return
-    try:
-        await _ensure_alembic_stamp()
-        from config.auto_migration import run_auto_migration
-        await asyncio.to_thread(run_auto_migration)
-    except Exception as e:
-        print(f"[!] Alembic auto_migration failed: {e}")
+    else:
+        try:
+            await _ensure_alembic_stamp()
+            from config.auto_migration import run_auto_migration
+            await asyncio.to_thread(run_auto_migration)
+        except Exception as e:
+            print(f"[!] Alembic auto_migration failed: {e}")
 
+        _migration_done = True
+        _MIGRATION_LOCK.touch()
+        _MIGRATION_LOCK.write_text(f"{os.getpid()}")
+
+    # Column sync runs on every startup (not gated by migration lock)
+    # to ensure ORM columns exist even when auto_migration is skipped.
     try:
         await _sync_missing_columns()
     except Exception as e:
         print(f"[!] Column sync failed: {e}")
-
-    _migration_done = True
-    _MIGRATION_LOCK.touch()
-    _MIGRATION_LOCK.write_text(f"{os.getpid()}")
 
 async def check_db_alive() -> bool:
     try:
