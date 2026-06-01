@@ -69,7 +69,6 @@ async def lifespan(app: FastAPI):
         print("[+] Firebase Admin initialized")
 
     yield
-    # Any shutdown logic goes here (optional)
 
 app = FastAPI(
     title="MXSoft Distr Dashboard",
@@ -281,7 +280,6 @@ if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()
 
-    # Run migrations BEFORE uvicorn starts (WatchFiles is not active yet)
     try:
         asyncio.run(create_all_tables())
     except Exception:

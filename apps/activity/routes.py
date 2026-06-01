@@ -10,6 +10,6 @@ router = APIRouter(
 
 
 @router.get("")
-def get_activities(lang: str = Query("uz", regex="^(uz|ru|en)$")):
+def get_activities(lang: str = Query("uz", pattern="^(uz|ru|en)$")):
     activities = ActivityService.get_list(lang)
     return success_response(activities)
