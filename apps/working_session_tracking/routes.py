@@ -66,7 +66,9 @@ async def list_working_sessions(
         .options(
             joinedload(WorkingSession.user_rel),
             defaultload(WorkingSession.user_rel).selectinload(User.company_rel),
-            defaultload(WorkingSession.user_rel).selectinload(User.manager),
+            defaultload(WorkingSession.user_rel).selectinload(User.branch_rel),
+            defaultload(WorkingSession.user_rel).selectinload(User.manager).selectinload(User.company_rel),
+            defaultload(WorkingSession.user_rel).selectinload(User.manager).selectinload(User.branch_rel),
         )
         .join(User, WorkingSession.user_rel)
         .join(
