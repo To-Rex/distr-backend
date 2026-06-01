@@ -55,8 +55,8 @@ async def list_working_sessions(
             WorkingSession.user_id,
             func.min(WorkingSession.session).label("min_session"),
         )
-        #.where(func.date(WorkingSession.session) == date.today())
-        .where(func.date(WorkingSession.session) == (date.today() - timedelta(days=1)))
+        .where(func.date(WorkingSession.session) == date.today())
+        #.where(func.date(WorkingSession.session) == (date.today() - timedelta(days=1)))
         .group_by(WorkingSession.user_id)
         .subquery()
     )
@@ -68,11 +68,13 @@ async def list_working_sessions(
             defaultload(WorkingSession.user_rel).selectinload(User.company_rel),
             defaultload(WorkingSession.user_rel).selectinload(User.manager),
         )
+        .join(User, WorkingSession.user_rel)
         .join(
             earliest_subq,
             (WorkingSession.user_id == earliest_subq.c.user_id)
             & (WorkingSession.session == earliest_subq.c.min_session),
         )
+        .where(User.company_id == current_user.company_id)
     )
     return [
         WorkerSessionResponse(
