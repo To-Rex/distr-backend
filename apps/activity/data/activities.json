@@ -1,5 +1,35 @@
 [
   {
+    "id": 1780294957256,
+    "action": "user_updated_by_admin",
+    "message": {
+      "uz": "Foydalanuvchi ma'lumotlari yangilandi apreltest1",
+      "ru": "Данные пользователя обновлены apreltest1",
+      "en": "User info updated apreltest1"
+    },
+    "created_at": "2026-06-01T06:22:37.256793+00:00"
+  },
+  {
+    "id": 1780294731478,
+    "action": "user_updated_by_admin",
+    "message": {
+      "uz": "Foydalanuvchi ma'lumotlari yangilandi apreltest1",
+      "ru": "Данные пользователя обновлены apreltest1",
+      "en": "User info updated apreltest1"
+    },
+    "created_at": "2026-06-01T06:18:51.478863+00:00"
+  },
+  {
+    "id": 1780294716118,
+    "action": "user_login",
+    "message": {
+      "uz": "Foydalanuvchi tizimga kirdi admin",
+      "ru": "Пользователь вошел в систему admin",
+      "en": "User logged in admin"
+    },
+    "created_at": "2026-06-01T06:18:36.118065+00:00"
+  },
+  {
     "id": 1780294067919,
     "action": "user_registered",
     "message": {
@@ -28,35 +58,5 @@
       "en": "User logged in odina0633"
     },
     "created_at": "2026-06-01T05:27:42.436200+00:00"
-  },
-  {
-    "id": 1780290506977,
-    "action": "user_login",
-    "message": {
-      "uz": "Foydalanuvchi tizimga kirdi odina0633",
-      "ru": "Пользователь вошел в систему odina0633",
-      "en": "User logged in odina0633"
-    },
-    "created_at": "2026-06-01T05:08:26.977277+00:00"
-  },
-  {
-    "id": 1780117499006,
-    "action": "user_login",
-    "message": {
-      "uz": "Foydalanuvchi tizimga kirdi jaxongir4504",
-      "ru": "Пользователь вошел в систему jaxongir4504",
-      "en": "User logged in jaxongir4504"
-    },
-    "created_at": "2026-05-30T05:04:59.006347+00:00"
-  },
-  {
-    "id": 1780082133388,
-    "action": "user_login",
-    "message": {
-      "uz": "Foydalanuvchi tizimga kirdi jaxongir4504",
-      "ru": "Пользователь вошел в систему jaxongir4504",
-      "en": "User logged in jaxongir4504"
-    },
-    "created_at": "2026-05-29T19:15:33.388067+00:00"
   }
 ]

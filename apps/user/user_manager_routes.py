@@ -47,7 +47,8 @@ async def list_users(
     require_admin_or_manager(current_user)
 
     query = select(User).options(
-        selectinload(User.manager),
+        selectinload(User.manager).selectinload(User.branch_rel),
+        selectinload(User.manager).selectinload(User.company_rel),
         selectinload(User.company_rel),
         selectinload(User.branch_rel),
         selectinload(User.agents),
@@ -81,7 +82,8 @@ async def get_user(
     result = await session.execute(
         select(User)
         .options(
-            selectinload(User.manager),
+            selectinload(User.manager).selectinload(User.branch_rel),
+            selectinload(User.manager).selectinload(User.company_rel),
             selectinload(User.company_rel),
             selectinload(User.branch_rel),
             selectinload(User.agents),
@@ -126,7 +128,8 @@ async def create_user(
     result = await session.execute(
         select(User)
         .options(
-            selectinload(User.manager),
+            selectinload(User.manager).selectinload(User.branch_rel),
+            selectinload(User.manager).selectinload(User.company_rel),
             selectinload(User.company_rel),
             selectinload(User.branch_rel),
             selectinload(User.agents),
@@ -170,7 +173,8 @@ async def update_user(
     result = await session.execute(
         select(User)
         .options(
-            selectinload(User.manager),
+            selectinload(User.manager).selectinload(User.branch_rel),
+            selectinload(User.manager).selectinload(User.company_rel),
             selectinload(User.company_rel),
             selectinload(User.branch_rel),
             selectinload(User.agents),
