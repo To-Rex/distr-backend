@@ -19,7 +19,8 @@ async def _resolve_user_by_id(user_id: int, session: AsyncSession) -> User | Non
     query = (
         select(User)
         .options(
-            selectinload(User.manager),
+            selectinload(User.manager).selectinload(User.branch_rel),
+            selectinload(User.manager).selectinload(User.company_rel),
             selectinload(User.company_rel),
             selectinload(User.branch_rel),
         )
@@ -33,7 +34,8 @@ async def _resolve_user_by_legacy_token(token: str, session: AsyncSession) -> Us
     query = (
         select(AccessToken)
         .options(
-            selectinload(AccessToken.user).selectinload(User.manager),
+            selectinload(AccessToken.user).selectinload(User.manager).selectinload(User.branch_rel),
+            selectinload(AccessToken.user).selectinload(User.manager).selectinload(User.company_rel),
             selectinload(AccessToken.user).selectinload(User.company_rel),
             selectinload(AccessToken.user).selectinload(User.branch_rel),
         )
