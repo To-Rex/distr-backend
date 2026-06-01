@@ -14,14 +14,19 @@ from config.database import get_async_session
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
+from sqlalchemy.orm import selectinload
+
 
 async def _resolve_user_by_id(user_id: int, session: AsyncSession) -> User | None:
     query = (
         select(User)
         .options(
-            selectinload(User.manager),
+            # 1. Load the User's direct relationships
             selectinload(User.company_rel),
             selectinload(User.branch_rel),
+
+            # 2. Load the User's manager AND nested relationships attached to that manager
+            selectinload(User.manager)
         )
         .where(User.id == user_id)
     )
