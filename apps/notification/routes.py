@@ -6,13 +6,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from firebase_admin import messaging
 from apps.notification.models import Notification, NotificationUserStatus
 from apps.notification.schemas import (
+    AdminNotificationBy1cIdCreate,
+    AdminNotificationCreate,
     NotificationCreate,
     NotificationResponse,
+    SecurityKeyNotificationCreate,
     NotificationUpdate,
     NotificationUserStatusResponse,
     UnreadCountResponse,
 )
-from apps.user.models import User
+from apps.user.models import User, UserType
 from apps.user.di import get_current_user_by_token
 from apps.company.models import Company, SecurityKey
 from config.database import get_async_session
@@ -92,6 +95,166 @@ async def create_notification(
         await session.rollback()
         raise HTTPException(
             status_code=500, detail=f"Database error: {str(e)}")
+
+
+@router.post("/send-to-user", response_model=NotificationResponse, status_code=status.HTTP_201_CREATED)
+async def send_notification_to_user(
+    notification_data: AdminNotificationCreate,
+    session: AsyncSession = Depends(get_async_session),
+    current_user: User = Depends(get_current_user_by_token),
+):
+    if current_user.user_type not in [UserType.SUPERADMIN, UserType.ADMIN]:
+        raise HTTPException(status_code=403, detail="Only admins can send notifications to specific users")
+
+    target_user = await session.get(User, notification_data.user_id)
+    if not target_user:
+        raise HTTPException(status_code=404, detail="Target user not found")
+
+    new_notification = Notification(
+        title=notification_data.title,
+        message=notification_data.message,
+        date=notification_data.date,
+        author=notification_data.author,
+        company_id=target_user.company_id,
+        user_1c_id=target_user.user_1c_id,
+        user_type=target_user.user_type.value if target_user.user_type else None,
+    )
+    session.add(new_notification)
+    await session.commit()
+    await session.refresh(new_notification)
+
+    status_record = NotificationUserStatus(
+        notification_id=new_notification.id,
+        user_id=target_user.id,
+        is_read=False,
+    )
+    session.add(status_record)
+    await session.commit()
+
+    if target_user.fcm_token:
+        try:
+            message = messaging.Message(
+                notification=messaging.Notification(
+                    title=new_notification.title,
+                    body=new_notification.message
+                ),
+                token=target_user.fcm_token
+            )
+            response = messaging.send(message)
+            print(f"Successfully sent message: {response}")
+        except Exception as fcm_error:
+            print(f"FCM Failed: {fcm_error}")
+
+    return new_notification
+
+
+@router.post("/send-to-user-1c", response_model=NotificationResponse, status_code=status.HTTP_201_CREATED)
+async def send_notification_to_user_by_1c(
+    notification_data: AdminNotificationBy1cIdCreate,
+    session: AsyncSession = Depends(get_async_session),
+    current_user: User = Depends(get_current_user_by_token),
+):
+    if current_user.user_type not in [UserType.SUPERADMIN, UserType.ADMIN]:
+        raise HTTPException(status_code=403, detail="Only admins can send notifications to specific users")
+
+    query = select(User).where(User.user_1c_id == notification_data.user_1c_id)
+    if notification_data.company_id is not None:
+        query = query.where(User.company_id == notification_data.company_id)
+
+    result = await session.execute(query)
+    target_user = result.scalar_one_or_none()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="Target user not found")
+
+    new_notification = Notification(
+        title=notification_data.title,
+        message=notification_data.message,
+        date=notification_data.date,
+        author=notification_data.author,
+        company_id=target_user.company_id,
+        user_1c_id=target_user.user_1c_id,
+        user_type=target_user.user_type.value if target_user.user_type else None,
+    )
+    session.add(new_notification)
+    await session.commit()
+    await session.refresh(new_notification)
+
+    status_record = NotificationUserStatus(
+        notification_id=new_notification.id,
+        user_id=target_user.id,
+        is_read=False,
+    )
+    session.add(status_record)
+    await session.commit()
+
+    if target_user.fcm_token:
+        try:
+            message = messaging.Message(
+                notification=messaging.Notification(
+                    title=new_notification.title,
+                    body=new_notification.message
+                ),
+                token=target_user.fcm_token
+            )
+            response = messaging.send(message)
+            print(f"Successfully sent message: {response}")
+        except Exception as fcm_error:
+            print(f"FCM Failed: {fcm_error}")
+
+    return new_notification
+
+
+@router.post("/send-by-key", response_model=NotificationResponse, status_code=status.HTTP_201_CREATED)
+async def send_notification_by_key(
+    notification_data: SecurityKeyNotificationCreate,
+    session: AsyncSession = Depends(get_async_session),
+):
+    res = await session.execute(select(SecurityKey).where(SecurityKey.key == notification_data.security_key))
+    security_key_obj = res.scalar_one_or_none()
+    if not security_key_obj:
+        raise HTTPException(status_code=400, detail="Invalid security key")
+
+    result = await session.execute(select(User).where(User.user_1c_id == notification_data.user_1c_id))
+    target_user = result.scalar_one_or_none()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="Target user not found")
+
+    new_notification = Notification(
+        title=notification_data.title,
+        message=notification_data.message,
+        date=notification_data.date,
+        author=notification_data.author,
+        company_id=target_user.company_id,
+        user_1c_id=target_user.user_1c_id,
+        user_type=target_user.user_type.value if target_user.user_type else None,
+    )
+    session.add(new_notification)
+    await session.commit()
+    await session.refresh(new_notification)
+
+    status_record = NotificationUserStatus(
+        notification_id=new_notification.id,
+        user_id=target_user.id,
+        is_read=False,
+    )
+    session.add(status_record)
+    await session.commit()
+
+    if target_user.fcm_token:
+        try:
+            message = messaging.Message(
+                notification=messaging.Notification(
+                    title=new_notification.title,
+                    body=new_notification.message
+                ),
+                token=target_user.fcm_token
+            )
+            response = messaging.send(message)
+            print(f"Successfully sent message: {response}")
+        except Exception as fcm_error:
+            print(f"FCM Failed: {fcm_error}")
+
+    return new_notification
 
 
 @router.get("", response_model=List[NotificationResponse])

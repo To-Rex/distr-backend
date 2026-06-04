@@ -1,5 +1,35 @@
 [
   {
+    "id": 1780571305768,
+    "action": "user_login",
+    "message": {
+      "uz": "Foydalanuvchi tizimga kirdi admin",
+      "ru": "Пользователь вошел в систему admin",
+      "en": "User logged in admin"
+    },
+    "created_at": "2026-06-04T11:08:25.767992+00:00"
+  },
+  {
+    "id": 1780568639360,
+    "action": "user_login",
+    "message": {
+      "uz": "Foydalanuvchi tizimga kirdi admin",
+      "ru": "Пользователь вошел в систему admin",
+      "en": "User logged in admin"
+    },
+    "created_at": "2026-06-04T10:23:59.360367+00:00"
+  },
+  {
+    "id": 1780566745364,
+    "action": "user_login",
+    "message": {
+      "uz": "Foydalanuvchi tizimga kirdi admin",
+      "ru": "Пользователь вошел в систему admin",
+      "en": "User logged in admin"
+    },
+    "created_at": "2026-06-04T09:52:25.364030+00:00"
+  },
+  {
     "id": 1780294957256,
     "action": "user_updated_by_admin",
     "message": {
@@ -28,35 +58,5 @@
       "en": "User logged in admin"
     },
     "created_at": "2026-06-01T06:18:36.118065+00:00"
-  },
-  {
-    "id": 1780294067919,
-    "action": "user_registered",
-    "message": {
-      "uz": "Foydalanuvchi ro'yxatdan o'tdi testapreltest",
-      "ru": "Пользователь зарегистрирован testapreltest",
-      "en": "User registered testapreltest"
-    },
-    "created_at": "2026-06-01T06:07:47.919673+00:00"
-  },
-  {
-    "id": 1780293624926,
-    "action": "user_login",
-    "message": {
-      "uz": "Foydalanuvchi tizimga kirdi madina7797",
-      "ru": "Пользователь вошел в систему madina7797",
-      "en": "User logged in madina7797"
-    },
-    "created_at": "2026-06-01T06:00:24.926512+00:00"
-  },
-  {
-    "id": 1780291662436,
-    "action": "user_login",
-    "message": {
-      "uz": "Foydalanuvchi tizimga kirdi odina0633",
-      "ru": "Пользователь вошел в систему odina0633",
-      "en": "User logged in odina0633"
-    },
-    "created_at": "2026-06-01T05:27:42.436200+00:00"
   }
 ]
