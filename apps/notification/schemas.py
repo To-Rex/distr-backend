@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -15,6 +15,7 @@ class NotificationBase(BaseModel):
 class NotificationCreate(NotificationBase):
     company_id: Optional[int] = None
     security_key: Optional[str] = Field(None, max_length=255)
+    users_1c_id: Optional[List[int]] = None
 
 
 class NotificationUpdate(BaseModel):
@@ -26,6 +27,32 @@ class NotificationUpdate(BaseModel):
     user_1c_id: Optional[int] = None
     company_id: Optional[int] = None
     user_id: Optional[int] = None
+
+
+class AdminNotificationCreate(BaseModel):
+    user_id: int = Field(..., description="DB user ID of the target user")
+    title: str = Field(..., max_length=250)
+    message: Optional[str] = Field(None, max_length=2000)
+    date: Optional[str] = Field(None, max_length=10)
+    author: Optional[str] = Field(None, max_length=100)
+
+
+class AdminNotificationBy1cIdCreate(BaseModel):
+    user_1c_id: int = Field(..., description="1C ID of the target user")
+    company_id: Optional[int] = Field(None, description="Company ID for narrowing the user search")
+    title: str = Field(..., max_length=250)
+    message: Optional[str] = Field(None, max_length=2000)
+    date: Optional[str] = Field(None, max_length=10)
+    author: Optional[str] = Field(None, max_length=100)
+
+
+class SecurityKeyNotificationCreate(BaseModel):
+    security_key: str = Field(..., max_length=255, description="Security key for authorization")
+    user_1c_id: int = Field(..., description="1C ID of the target user")
+    title: str = Field(..., max_length=250)
+    message: Optional[str] = Field(None, max_length=2000)
+    date: Optional[str] = Field(None, max_length=10)
+    author: Optional[str] = Field(None, max_length=100)
 
 
 class NotificationStatusResponse(BaseModel):

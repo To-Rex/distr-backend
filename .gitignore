@@ -20,3 +20,4 @@ backups/
 # App data (should not be committed)
 apps/app_store/data/
 apps/activity/data/
+config/config_notification.json
