@@ -1,9 +1,12 @@
+import json
 import logging
 import sys
 from datetime import datetime
+from typing import List, Optional
+
 from sqlalchemy.orm import contains_eager
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import and_, select
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from firebase_admin import messaging
 from apps.notification.models import Notification, NotificationUserStatus
@@ -28,13 +31,6 @@ from apps.user.models import User, UserType
 from apps.user.di import get_current_user_by_token
 from apps.company.models import Company, SecurityKey
 from config.database import get_async_session
-
-from datetime import datetime
-from typing import List, Optional
-
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select, or_
-from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(
     prefix="/notifications",
@@ -498,3 +494,62 @@ async def mark_multiple_as_read(
 
     await session.commit()
     return {"message": f"Marked {len(notification_ids)} as read"}
+
+
+@router.post("/firebase-config", status_code=200)
+async def upload_firebase_config(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user_by_token),
+):
+    if current_user.user_type not in [UserType.SUPERADMIN, UserType.ADMIN]:
+        raise HTTPException(status_code=403, detail="Only admins can upload Firebase config")
+
+    try:
+        content = await file.read()
+        config = json.loads(content)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON file")
+
+    required_fields = ["project_id", "private_key_id", "private_key", "client_email"]
+    for field in required_fields:
+        if field not in config:
+            raise HTTPException(status_code=400, detail=f"Missing required field: {field}")
+
+    firebase_vars = {
+        "FIREBASE_TYPE": config.get("type", "service_account"),
+        "FIREBASE_PROJECT_ID": config["project_id"],
+        "FIREBASE_PRIVATE_KEY_ID": config["private_key_id"],
+        "FIREBASE_PRIVATE_KEY": config["private_key"].replace("\n", "\\n"),
+        "FIREBASE_CLIENT_EMAIL": config["client_email"],
+        "FIREBASE_CLIENT_ID": config.get("client_id", ""),
+        "FIREBASE_AUTH_URI": config.get("auth_uri", ""),
+        "FIREBASE_TOKEN_URI": config.get("token_uri", ""),
+        "FIREBASE_AUTH_PROVIDER_X509_CERT_URL": config.get("auth_provider_x509_cert_url", ""),
+        "FIREBASE_CLIENT_X509_CERT_URL": config.get("client_x509_cert_url", ""),
+        "FIREBASE_UNIVERSE_DOMAIN": config.get("universe_domain", ""),
+    }
+
+    env_path = ".env"
+    existing_lines = []
+    try:
+        with open(env_path, "r") as f:
+            existing_lines = f.readlines()
+    except FileNotFoundError:
+        pass
+
+    updated_lines = [line for line in existing_lines if not line.startswith("FIREBASE_")]
+    if updated_lines and not updated_lines[-1].endswith("\n"):
+        updated_lines.append("\n")
+    if updated_lines and updated_lines[-1].strip() != "":
+        updated_lines.append("\n")
+
+    updated_lines.append("# Firebase\n")
+    for key, value in firebase_vars.items():
+        updated_lines.append(f"{key}={value}\n")
+
+    with open(env_path, "w") as f:
+        f.writelines(updated_lines)
+
+    logger.info("Firebase config updated via /firebase-config by user_id=%s", current_user.id)
+
+    return {"message": "Firebase config updated successfully", "project_id": config["project_id"]}
