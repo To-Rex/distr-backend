@@ -150,7 +150,7 @@ admin.add_view(AlembicVersionAdmin)
 async def redirect_root(request: Request):
     if not request.app.state.db_connected:
         return RedirectResponse(url="/setup")
-    return RedirectResponse(url="https://dms.mxsoft.uz/")
+    return RedirectResponse(url=os.getenv("REDIRECT_ROOT_URL", "https://dms.mxsoft.uz/"))
 
 # ---- Database Setup Routes (available even when DB is down) ----
 _SETUP_TEMPLATES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
