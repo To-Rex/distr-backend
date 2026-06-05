@@ -1,3 +1,5 @@
+import logging
+import sys
 from datetime import datetime
 from sqlalchemy.orm import contains_eager
 from fastapi import APIRouter, Depends, HTTPException
@@ -5,6 +7,13 @@ from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from firebase_admin import messaging
 from apps.notification.models import Notification, NotificationUserStatus
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+if not logger.handlers:
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
+    logger.addHandler(handler)
 from apps.notification.schemas import (
     AdminNotificationBy1cIdCreate,
     AdminNotificationCreate,
@@ -41,6 +50,8 @@ async def create_notification(
     session: AsyncSession = Depends(get_async_session)
 ):
     try:
+        effective_company_id = notification_data.company_id
+
         # 1. Validate Security Key
         if notification_data.security_key:
             res = await session.execute(select(SecurityKey).where(SecurityKey.key == notification_data.security_key))
@@ -49,44 +60,72 @@ async def create_notification(
                 raise HTTPException(
                     status_code=400, detail="Invalid security key")
 
-            if notification_data.company_id and security_key_obj.company_id != notification_data.company_id:
+            effective_company_id = security_key_obj.company_id
+
+            if notification_data.company_id is not None and security_key_obj.company_id != notification_data.company_id:
                 raise HTTPException(
                     status_code=400, detail="Security key mismatch for company")
 
         # 2. Validate Company
-        if notification_data.company_id:
-            res = await session.execute(select(Company).where(Company.id == notification_data.company_id))
+        if effective_company_id is not None:
+            res = await session.execute(select(Company).where(Company.id == effective_company_id))
             if not res.scalar_one_or_none():
                 raise HTTPException(
                     status_code=404, detail="Company not found")
 
         new_notification = Notification(
-            **notification_data.model_dump(exclude={'security_key'}))
+            **notification_data.model_dump(exclude={'security_key', 'users_1c_id'}))
+        new_notification.company_id = effective_company_id
         session.add(new_notification)
         await session.commit()
         await session.refresh(new_notification)
 
-        query = select(User).where(
-            User.company_id == notification_data.company_id,
-            User.user_1c_id == notification_data.user_1c_id
-        )
-        result = await session.execute(query)
-        target_user = result.scalar_one_or_none()
+        target_1c_ids = []
+        if notification_data.users_1c_id:
+            target_1c_ids = notification_data.users_1c_id
+        elif notification_data.user_1c_id is not None:
+            target_1c_ids = [notification_data.user_1c_id]
 
-        try:
-            message = messaging.Message(
-                notification=messaging.Notification(
-                    title=new_notification.title,
-                    body=new_notification.message
-                ),
-                token=target_user.fcm_token
-            )
-            response = messaging.send(message)
-            print(f"Successfully sent message: {response}")
-        except Exception as fcm_error:
-            print(f"FCM Failed: {fcm_error}")
-            # We don't necessarily want to crash the whole request
-            # if the DB part succeeded but only the push failed.
+        sent_count = 0
+        skip_no_user = 0
+        skip_no_token = 0
+        fail_count = 0
+
+        for user_1c_id in target_1c_ids:
+            query = select(User).where(User.user_1c_id == user_1c_id)
+            if effective_company_id is not None:
+                query = query.where(User.company_id == effective_company_id)
+            result = await session.execute(query)
+            target_users = result.scalars().all()
+
+            if not target_users:
+                skip_no_user += 1
+                logger.warning("FCM skip: user_1c_id=%s not found", user_1c_id)
+                continue
+
+            for target_user in target_users:
+                if not target_user.fcm_token:
+                    skip_no_token += 1
+                    logger.warning("FCM skip: user_1c_id=%s (user_id=%s) has no fcm_token", user_1c_id, target_user.id)
+                    continue
+
+                try:
+                    message = messaging.Message(
+                        notification=messaging.Notification(
+                            title=new_notification.title,
+                            body=new_notification.message
+                        ),
+                        token=target_user.fcm_token
+                    )
+                    response = messaging.send(message)
+                    sent_count += 1
+                    logger.info("FCM sent: user_1c_id=%s, user_id=%s, title=%s, fcm_response=%s", user_1c_id, target_user.id, new_notification.title, response)
+                except Exception as fcm_error:
+                    fail_count += 1
+                    logger.error("FCM failed: user_1c_id=%s, user_id=%s, title=%s, error=%s", user_1c_id, target_user.id, new_notification.title, fcm_error)
+
+        logger.info("FCM summary: notification_id=%s, total=%s, sent=%s, no_user=%s, no_token=%s, failed=%s",
+                     new_notification.id, len(target_1c_ids), sent_count, skip_no_user, skip_no_token, fail_count)
 
         return new_notification
     except HTTPException:
@@ -141,9 +180,9 @@ async def send_notification_to_user(
                 token=target_user.fcm_token
             )
             response = messaging.send(message)
-            print(f"Successfully sent message: {response}")
+            logger.info("FCM sent: user_id=%s, title=%s, fcm_response=%s", target_user.id, new_notification.title, response)
         except Exception as fcm_error:
-            print(f"FCM Failed: {fcm_error}")
+            logger.error("FCM failed: user_id=%s, title=%s, error=%s", target_user.id, new_notification.title, fcm_error)
 
     return new_notification
 
@@ -197,9 +236,9 @@ async def send_notification_to_user_by_1c(
                 token=target_user.fcm_token
             )
             response = messaging.send(message)
-            print(f"Successfully sent message: {response}")
+            logger.info("FCM sent: user_1c_id=%s, title=%s, fcm_response=%s", target_user.user_1c_id, new_notification.title, response)
         except Exception as fcm_error:
-            print(f"FCM Failed: {fcm_error}")
+            logger.error("FCM failed: user_1c_id=%s, title=%s, error=%s", target_user.user_1c_id, new_notification.title, fcm_error)
 
     return new_notification
 
@@ -250,9 +289,9 @@ async def send_notification_by_key(
                 token=target_user.fcm_token
             )
             response = messaging.send(message)
-            print(f"Successfully sent message: {response}")
+            logger.info("FCM sent: user_1c_id=%s, title=%s, fcm_response=%s", target_user.user_1c_id, new_notification.title, response)
         except Exception as fcm_error:
-            print(f"FCM Failed: {fcm_error}")
+            logger.error("FCM failed: user_1c_id=%s, title=%s, error=%s", target_user.user_1c_id, new_notification.title, fcm_error)
 
     return new_notification
 

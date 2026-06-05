@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -15,6 +15,7 @@ class NotificationBase(BaseModel):
 class NotificationCreate(NotificationBase):
     company_id: Optional[int] = None
     security_key: Optional[str] = Field(None, max_length=255)
+    users_1c_id: Optional[List[int]] = None
 
 
 class NotificationUpdate(BaseModel):

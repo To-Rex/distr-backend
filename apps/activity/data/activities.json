@@ -1,5 +1,25 @@
 [
   {
+    "id": 1780642944922,
+    "action": "user_login",
+    "message": {
+      "uz": "Foydalanuvchi tizimga kirdi agent",
+      "ru": "Пользователь вошел в систему agent",
+      "en": "User logged in agent"
+    },
+    "created_at": "2026-06-05T07:02:24.922185+00:00"
+  },
+  {
+    "id": 1780638190437,
+    "action": "user_login",
+    "message": {
+      "uz": "Foydalanuvchi tizimga kirdi admin",
+      "ru": "Пользователь вошел в систему admin",
+      "en": "User logged in admin"
+    },
+    "created_at": "2026-06-05T05:43:10.437991+00:00"
+  },
+  {
     "id": 1780577063454,
     "action": "user_login",
     "message": {
@@ -38,25 +58,5 @@
       "en": "User logged in admin"
     },
     "created_at": "2026-06-04T09:52:25.364030+00:00"
-  },
-  {
-    "id": 1780294957256,
-    "action": "user_updated_by_admin",
-    "message": {
-      "uz": "Foydalanuvchi ma'lumotlari yangilandi apreltest1",
-      "ru": "Данные пользователя обновлены apreltest1",
-      "en": "User info updated apreltest1"
-    },
-    "created_at": "2026-06-01T06:22:37.256793+00:00"
-  },
-  {
-    "id": 1780294731478,
-    "action": "user_updated_by_admin",
-    "message": {
-      "uz": "Foydalanuvchi ma'lumotlari yangilandi apreltest1",
-      "ru": "Данные пользователя обновлены apreltest1",
-      "en": "User info updated apreltest1"
-    },
-    "created_at": "2026-06-01T06:18:51.478863+00:00"
   }
 ]
