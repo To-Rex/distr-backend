@@ -1,41 +1,65 @@
-# AppStore API
+# MX-Soft Distr — AppStore API Dokumentatsiyasi
 
-Ilovalar do'koni uchun to'liq API. Ilovalarni ro'yxatdan o'tkazish, boshqarish, yuklab olish va foydalanuvchilarni boshqarish imkoniyatlarini taqdim etadi.
+**Base URL:** `http://<host>:8002/appstore`
 
-**Base URL:** `/appstore`
+**Auth turi:** JWT Bearer Token (`Authorization: Bearer <token>`) cookie orqali refresh token bilan birga.
 
----
-
-## Sog'likni tekshirish
-
-```
-GET /appstore/health
-```
-
-**Response:**
-```json
-{
-  "status": "ok",
-  "service": "appstore"
-}
-```
+AppStore — mobil ilovalar do'koni. Publisherlar ilova yuklaydi, foydalanuvchilar yuklab oladi.
 
 ---
 
-## Autentifikatsiya
+## 1. Auth (`/appstore/auth`)
 
-### Tizimga kirish
+### 1.1. Login
 
 ```
 POST /appstore/auth/login
 ```
 
-**Request body:**
+| Parametr | Turi | Majburiy | Tavsif |
+|----------|------|----------|--------|
+| **Body (JSON)** ||||
+| username | string | Ha | Login |
+| password | string | Ha | Parol |
+
+**Response (200):**
 ```json
 {
-  "username": "admin",
-  "password": "admin123"
+  "success": true,
+  "data": {
+    "token": "eyJ...",
+    "user": {
+      "id": "user-admin-001",
+      "username": "admin",
+      "email": "admin@torex.uz",
+      "role": "admin",
+      "displayName": "Admin",
+      "avatar": null
+    }
+  }
 }
+```
+
+Cookie: `refreshToken` o'rnatiladi (httponly, 7 kun).
+
+**Xatoliklar:** `401` — Login yoki parol noto'g'ri | `503` — Storage unavailable
+
+---
+
+### 1.2. Logout
+
+```
+POST /appstore/auth/logout
+```
+
+Cookie `refreshToken` o'chiriladi.
+
+---
+
+### 1.3. Profil
+
+```
+GET /appstore/auth/me
 ```
 
 **Response (200):**
@@ -43,827 +67,515 @@ POST /appstore/auth/login
 {
   "success": true,
   "data": {
-    "token": "jwt...",
-    "user": {
-      "id": "uuid",
-      "username": "admin",
-      "email": "admin@example.com",
-      "role": "admin",
-      "displayName": "Admin",
-      "avatar": "/appstore/uploads/avatars/uuid.ext",
-      "createdAt": "2026-01-01T00:00:00"
-    }
-  }
-}
-```
-
-`refreshToken` httpOnly cookie o'rnatiladi (7 kun).
-
-| Maydon | Turi | Tavsif |
-|---|---|---|
-| `username` | `string` | Foydalanuvchi nomi |
-| `password` | `string` | Parol |
-
----
-
-### Tizimdan chiqish
-
-```
-POST /appstore/auth/logout
-```
-
-**Header:** `Authorization: Bearer <token>`
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Muvaffaqiyatli chiqildi"
-}
-```
-
-`refreshToken` cookie o'chiriladi.
-
----
-
-### Profilni olish
-
-```
-GET /appstore/auth/me
-```
-
-**Header:** `Authorization: Bearer <token>`
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "id": "uuid",
+    "id": "user-admin-001",
     "username": "admin",
-    "email": "admin@example.com",
+    "email": "admin@torex.uz",
     "role": "admin",
     "displayName": "Admin",
-    "avatar": "/appstore/uploads/avatars/uuid.ext",
-    "createdAt": "2026-01-01T00:00:00"
+    "avatar": null,
+    "createdAt": "2024-01-01"
   }
 }
 ```
 
 ---
 
-### Profilni yangilash
+### 1.4. Profil yangilash
 
 ```
 PUT /appstore/auth/profile
 ```
 
-**Header:** `Authorization: Bearer <token>`
-
-**Request:** `multipart/form-data`
-
-| Maydon | Turi | Tavsif |
-|---|---|---|
-| `displayName` | `string` | Ko'rinadigan nom |
-| `avatar` | `file` | Avatar rasm (max 512KB) |
-
-**Response:** Profil ma'lumotlari (yuqoridagi kabi)
+| Parametr | Turi | Majburiy | Tavsif |
+|----------|------|----------|--------|
+| **Form Data** ||||
+| displayName | string | Yo'q | Yangi ism |
+| avatar | file | Yo'q | Avatar rasm |
 
 ---
 
-### Parolni o'zgartirish
+### 1.5. Parol almashtirish
 
 ```
 PATCH /appstore/auth/change-password
 ```
 
-**Header:** `Authorization: Bearer <token>`
+| Parametr | Turi | Majburiy | Tavsif |
+|----------|------|----------|--------|
+| **Body (JSON)** ||||
+| currentPassword | string | Ha | Joriy parol |
+| newPassword | string | Ha | Yangi parol |
 
-**Request body:**
-```json
-{
-  "currentPassword": "current123",
-  "newPassword": "new123"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Parol muvaffaqiyatli o'zgartirildi"
-}
-```
+**Xatoliklar:** `400` — Noto'g'ri joriy parol
 
 ---
 
-### Tokenni yangilash
+### 1.6. Token yangilash
 
 ```
 POST /appstore/auth/refresh
 ```
 
-`refreshToken` cookie yoki query parametr orqali yuboriladi.
+Cookie'dan `refreshToken` ni o'qiydi va yangi `token` qaytaradi.
 
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "token": "new_jwt..."
-  }
-}
-```
+**Xatoliklar:** `401` — Refresh token muddati o'tgan
 
 ---
 
-## Ilovalar (Ommaviy)
+## 2. Ommaviy Ilovalar
 
-### Ilovalar ro'yxati
-
-```
-GET /appstore/apps
-```
-
-**Query parametrlar:**
-
-| Parametr | Birlamchi | Tavsif |
-|---|---|---|
-| `q` | - | Qidirish matni |
-| `category` | - | Kategoriya bo'yicha filtrlash |
-| `sort` | `updated` | Saralash: `updated`, `newest`, `downloads`, `name` |
-| `page` | `1` | Sahifa |
-| `limit` | `20` | Limit |
-| `published` | `true` | Nashr qilinganlar |
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "uuid",
-      "name": "My App",
-      "icon": "/appstore/uploads/icons/uuid.ext",
-      "developer": "Dev Name",
-      "shortDescription": "Qisqa tavsif",
-      "category": "productivity",
-      "tags": ["tool", "utility"],
-      "totalDownloads": 150,
-      "latestVersion": "1.0.0",
-      "hasApk": true,
-      "updatedAt": "2026-01-15T12:00:00",
-      "createdAt": "2026-01-01T12:00:00",
-      "published": true
-    }
-  ],
-  "pagination": {
-    "page": 1,
-    "limit": 20,
-    "total": 1,
-    "totalPages": 1
-  }
-}
-```
-
----
-
-### Tanlangan ilovalar
+### 2.1. Tavsiya etilganlar
 
 ```
 GET /appstore/apps/featured?limit=3
 ```
 
-| Parametr | Birlamchi | Tavsif |
-|---|---|---|
-| `limit` | `3` | Qaytariladigan ilovalar soni |
-
-**Response:** Ilovalar ro'yxati (yuqoridagi kabi)
-
 ---
 
-### So'nggi yangilanganlar
+### 2.2. So'nggi yangilanganlar
 
 ```
 GET /appstore/apps/recently-updated?limit=4
 ```
 
-| Parametr | Birlamchi | Tavsif |
-|---|---|---|
-| `limit` | `4` | Qaytariladigan ilovalar soni |
-
-**Response:** Ilovalar ro'yxati
-
 ---
 
-### Eng yangi ilovalar
+### 2.3. Eng yangilari
 
 ```
 GET /appstore/apps/newest?limit=4
 ```
 
-| Parametr | Birlamchi | Tavsif |
-|---|---|---|
-| `limit` | `4` | Qaytariladigan ilovalar soni |
+---
 
-**Response:** Ilovalar ro'yxati
+### 2.4. Qidiruv tavsiyalari
+
+```
+GET /appstore/apps/search-suggestions?q=telegram&limit=5
+```
+
+> `q` parametri kamida 2 belgidan iborat bo'lishi kerak.
 
 ---
 
-### Qidirish takliflari
+### 2.5. Ilovalar ro'yxati
 
 ```
-GET /appstore/apps/search-suggestions?q=my&limit=5
+GET /appstore/apps?q=&category=&sort=updated&page=1&limit=20
 ```
 
-| Parametr | Birlamchi | Tavsif |
-|---|---|---|
-| `q` | - | Qidirish matni (min 2 belgi) |
-| `limit` | `5` | Takliflar soni |
+| Parametr | Turi | Majburiy | Tavsif |
+|----------|------|----------|--------|
+| q | string | Yo'q | Qidiruv so'zi |
+| category | string | Yo'q | Kategoriya |
+| sort | string | Yo'q (updated) | `updated`, `newest`, `downloads`, `name` |
+| page | int | Yo'q (1) | Sahifa |
+| limit | int | Yo'q (20) | Har sahifada |
+| published | bool | Yo'q (true) | Nashr qilinganlar |
 
-**Response:**
+**Response (200):**
 ```json
 {
   "success": true,
-  "data": [
-    {
-      "id": "uuid",
-      "name": "My App",
-      "icon": "/appstore/uploads/icons/uuid.ext",
-      "category": "productivity",
-      "latestVersion": "1.0.0"
-    }
-  ]
+  "data": [...],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 50,
+    "pages": 3
+  }
 }
 ```
 
 ---
 
-### Ilova tafsilotlari
+### 2.6. Bitta ilova
 
 ```
 GET /appstore/apps/{app_id}
 ```
 
-**Response:**
+**Response (200):**
 ```json
 {
   "success": true,
   "data": {
-    "id": "uuid",
-    "name": "My App",
-    "icon": "/appstore/uploads/icons/uuid.ext",
-    "developer": "Dev Name",
-    "shortDescription": "Qisqa tavsif",
-    "description": "To'liq tavsif",
-    "category": "productivity",
-    "tags": ["tool", "utility"],
-    "screenshots": ["/appstore/uploads/screenshots/uuid1.ext"],
-    "versions": [
-      {
-        "version": "1.0.0",
-        "releaseDate": "2026-01-15",
-        "fileSize": 5242880,
-        "minAndroid": "8.0",
-        "changelog": "Birinchi versiya",
-        "downloadUrl": "/appstore/uploads/apks/uuid.apk",
-        "downloadCount": 100,
-        "isLatest": true,
-        "hasApk": true
-      }
-    ],
-    "hasApk": true,
-    "totalDownloads": 150,
-    "updatedAt": "2026-01-15T12:00:00",
-    "createdAt": "2026-01-01T12:00:00",
+    "id": "app-abc123",
+    "name": "MXAgent",
+    "developer": "MX Soft",
+    "shortDescription": "Agent ilovasi",
+    "description": "To'liq tavsif...",
+    "category": "business",
+    "tags": ["agent", "sales"],
+    "icon": "/appstore/uploads/icons/icon.png",
+    "screenshots": ["/appstore/uploads/screenshots/1.png"],
     "published": true,
-    "createdBy": "uuid"
+    "createdBy": "user-admin-001"
   }
+}
+```
+
+**Xatoliklar:** `404` — Ilova topilmadi
+
+---
+
+### 2.7. Ilova versiyalari
+
+```
+GET /appstore/apps/{app_id}/versions?sort=newest&page=1&limit=20
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": [...],
+  "pagination": { ... }
 }
 ```
 
 ---
 
-### Versiyalar ro'yxati
-
-```
-GET /appstore/apps/{app_id}/versions
-```
-
-| Parametr | Birlamchi | Tavsif |
-|---|---|---|
-| `sort` | `newest` | Saralash: `newest`, `oldest` |
-| `page` | `1` | Sahifa |
-| `limit` | `20` | Limit |
-
-**Response:** Paginated versiyalar ro'yxati
-
----
-
-### Versiya tafsilotlari
+### 2.8. Bitta versiya
 
 ```
 GET /appstore/apps/{app_id}/versions/{version}
 ```
 
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "appId": "uuid",
-    "appName": "My App",
-    "appIcon": "/appstore/uploads/icons/uuid.ext",
-    "version": "1.0.0",
-    "releaseDate": "2026-01-15",
-    "fileSize": 5242880,
-    "minAndroid": "8.0",
-    "changelog": "Birinchi versiya",
-    "downloadUrl": "/appstore/uploads/apks/uuid.apk",
-    "downloadCount": 100,
-    "isLatest": true,
-    "isNewerAvailable": false,
-    "latestVersion": "1.0.0"
-  }
-}
-```
+Masalan: `GET /appstore/apps/app-abc123/versions/1.2.3`
 
 ---
 
-### APK yuklab olish
+### 2.9. Yuklab olish
 
 ```
 GET /appstore/apps/{app_id}/versions/{version}/download
 ```
 
-Agar fayl mavjud bo'lsa, `FileResponse` qaytaradi (`application/vnd.android.package-archive`). Aks holda `downloadUrl` ga redirect qiladi.
+APK faylni `application/vnd.android.package-archive` content-type bilan streaming yuklash.
 
 ---
 
-### Skrinshotlar ro'yxati
+### 2.10. Skrinshotlar
 
 ```
 GET /appstore/apps/{app_id}/screenshots
 ```
 
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "appId": "uuid",
-    "appName": "My App",
-    "screenshots": [
-      {
-        "id": "uuid",
-        "url": "/appstore/uploads/screenshots/uuid.ext",
-        "order": 1
-      }
-    ]
-  }
-}
-```
-
 ---
 
-## Kategoriyalar
+## 3. Kategoriyalar
 
 ```
 GET /appstore/categories
 ```
 
-**Response:**
+**Response (200):**
 ```json
 {
   "success": true,
   "data": [
-    {
-      "id": "productivity",
-      "name": "Productivity",
-      "labelUz": "Samaradorlik",
-      "appCount": 5
-    }
+    { "id": "business", "name": "Biznes", "appCount": 12 },
+    { "id": "tools", "name": "Asboblar", "appCount": 5 }
   ]
 }
 ```
 
-Mavjud kategoriyalar: `productivity`, `communication`, `development`, `security`, `media`, `utilities`, `finance`, `education`.
-
 ---
 
-## Statistika
+## 4. Statistika
 
 ```
 GET /appstore/stats
 ```
 
-**Response:**
+**Response (200):**
 ```json
 {
   "success": true,
   "data": {
-    "totalApps": 10,
-    "totalVersions": 15,
-    "totalDownloads": 1000,
-    "totalCategories": 8
+    "totalApps": 25,
+    "totalDownloads": 1500,
+    "totalUsers": 10
   }
 }
 ```
 
 ---
 
-## Fayl yuklash
-
-Barcha yuklashlar `multipart/form-data` formatida `file` maydoni bilan yuboriladi.
-
-### Ikonka yuklash
+## 5. Fayl xizmati
 
 ```
-POST /appstore/upload/icon
+GET /appstore/uploads/{category}/{filename}
 ```
 
-**Header:** `Authorization: Bearer <token>`
+Masalan: `GET /appstore/uploads/icons/app-icon.png`
 
-| Maydon | Chegara |
-|---|---|
-| file | 512KB |
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "url": "/appstore/uploads/icons/uuid.ext"
-  }
-}
-```
+Qo'llab-quvvatlanadigan formatlar: `.apk`, `.png`, `.jpg`, `.jpeg`, `.webp`, `.svg`, `.zip`
 
 ---
 
-### Skrinshot yuklash
+## 6. Admin — Ilovalar (`/appstore/admin`)
+
+**Barcha admin endpointlar JWT auth talab qiladi.** Publisher o'z ilovasini boshqaradi, admin hammasini.
+
+### 6.1. Admin ilovalar ro'yxati
 
 ```
-POST /appstore/upload/screenshot
+GET /appstore/admin/apps?page=1&limit=20&published=
 ```
 
-**Header:** `Authorization: Bearer <token>`
-
-| Maydon | Chegara |
-|---|---|
-| file | 2MB |
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "url": "/appstore/uploads/screenshots/uuid.ext"
-  }
-}
-```
-
----
-
-### APK yuklash
-
-```
-POST /appstore/upload/apk
-```
-
-**Header:** `Authorization: Bearer <token>`
-
-| Maydon | Chegara |
-|---|---|
-| file | 500MB |
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "filePath": "/appstore/uploads/apks/uuid.apk",
-    "fileSize": 5242880,
-    "versionName": "1.0.0",
-    "packageName": "com.example.app",
-    "minSdkVersion": "26"
-  }
-}
-```
-
----
-
-### Avatar yuklash
-
-```
-POST /appstore/upload/avatar
-```
-
-**Header:** `Authorization: Bearer <token>`
-
-| Maydon | Chegara |
-|---|---|
-| file | 512KB |
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "url": "/appstore/uploads/avatars/uuid.ext"
-  }
-}
-```
-
----
-
-## Admin: Dashboard
-
-```
-GET /appstore/admin/dashboard
-```
-
-**Header:** `Authorization: Bearer <token>`
-
-**Response (Admin):**
-```json
-{
-  "success": true,
-  "data": {
-    "totalApps": 10,
-    "publishedApps": 8,
-    "draftApps": 2,
-    "totalDownloads": 1000,
-    "totalUsers": 20,
-    "totalPublishers": 3,
-    "recentApps": [
-      {
-        "id": "uuid",
-        "name": "My App",
-        "version": "1.0.0",
-        "status": "published",
-        "createdAt": "2026-01-15T12:00:00"
-      }
-    ],
-    "appsByCategory": [
-      { "name": "Samaradorlik", "value": 5 }
-    ],
-    "topAppsByDownloads": [
-      { "name": "My App", "downloads": 500 }
-    ]
-  }
-}
-```
-
-**Response (Publisher):** Publisher uchun faqat o'z ilovalari bo'yicha ma'lumotlar (`totalUsers` va `totalPublishers` bo'lmaydi).
-
----
-
-## Admin: Ilovalar
-
-### Ilovalar ro'yxati (Admin)
-
-```
-GET /appstore/admin/apps
-```
-
-**Header:** `Authorization: Bearer <token>`
-
-Admin barcha ilovalarni, publisher faqat o'z ilovalarini ko'radi.
-
-**Response:** Paginated ilovalar ro'yxati (ommaviy ko'rinishdagi kabi, qo'shimcha maydonlar bilan)
-
----
-
-### Ilova tafsilotlari (Admin)
+### 6.2. Admin bitta ilova
 
 ```
 GET /appstore/admin/apps/{app_id}
 ```
 
-**Header:** `Authorization: Bearer <token>`
-
-**Response:** To'liq ilova ma'lumotlari + `creatorName`
-
----
-
-### Ilova yaratish
+### 6.3. Ilova yaratish
 
 ```
 POST /appstore/admin/apps
 ```
 
-**Header:** `Authorization: Bearer <token>`
+| Parametr | Turi | Majburiy | Tavsif |
+|----------|------|----------|--------|
+| **Form Data** ||||
+| name | string | Ha | Ilova nomi |
+| shortDescription | string | Ha | Qisqa tavsif |
+| category | string | Ha | Kategoriya |
+| developer | string | Yo'q | Ishlab chiquvchi |
+| description | string | Yo'q | To'liq tavsif |
+| tags | string | Yo'q | Teglar (vergul bilan) |
+| published | bool | Yo'q (false) | Nashr qilish |
+| icon | file | Yo'q | Ikonka rasm |
 
-**Request:** `multipart/form-data`
-
-| Maydon | Turi | Talab | Tavsif |
-|---|---|---|---|
-| `name` | `string` | Ha | Ilova nomi |
-| `shortDescription` | `string` | Ha | Qisqa tavsif |
-| `category` | `string` | Ha | Kategoriya |
-| `developer` | `string` | Yo'q | Dasturchi |
-| `description` | `string` | Yo'q | To'liq tavsif |
-| `tags` | `string` | Yo'q | Teglar (vergul bilan ajratilgan) |
-| `published` | `string` | Yo'q | `"true"` yoki `"false"` |
-| `icon` | `file` | Yo'q | Ilova ikonkasi |
+**Response (201):** Ilova obyekti
 
 ---
 
-### Ilovani yangilash
+### 6.4. Ilova yangilash
 
 ```
 PUT /appstore/admin/apps/{app_id}
 ```
 
-**Header:** `Authorization: Bearer <token>`
-
-**Request:** `multipart/form-data` (yaratish bilan bir xil maydonlar)
+| Parametr | Turi | Majburiy | Tavsif |
+|----------|------|----------|--------|
+| **Form Data** — ixtiyoriy maydonlar ||
+| name | string | Yo'q | |
+| developer | string | Yo'q | |
+| shortDescription | string | Yo'q | |
+| description | string | Yo'q | |
+| category | string | Yo'q | |
+| tags | string | Yo'q | Vergul bilan |
+| published | bool | Yo'q | |
+| icon | file | Yo'q | |
 
 ---
 
-### Ilovani o'chirish
+### 6.5. Ilova o'chirish
 
 ```
 DELETE /appstore/admin/apps/{app_id}
 ```
 
-**Header:** `Authorization: Bearer <token>`
-
 ---
 
-### Nashr holatini o'zgartirish
+### 6.6. Nashr holatini o'zgartirish
 
 ```
 PATCH /appstore/admin/apps/{app_id}/toggle-publish
 ```
 
-**Header:** `Authorization: Bearer <token>`
-
 ---
 
-## Admin: Versiyalar
+## 7. Admin — Versiyalar
 
-### Versiya yaratish
+### 7.1. Versiya yaratish
 
 ```
 POST /appstore/admin/apps/{app_id}/versions
 ```
 
-**Header:** `Authorization: Bearer <token>`
+| Parametr | Turi | Majburiy | Tavsif |
+|----------|------|----------|--------|
+| **Form Data** ||||
+| version | string | Ha | Versiya raqami |
+| file | file | Ha | APK fayl (max 500MB) |
+| minAndroid | string | Yo'q (8.0) | Minimal Android versiya |
+| changelog | string | Yo'q | O'zgarishlar |
 
-**Request:** `multipart/form-data`
-
-| Maydon | Turi | Talab | Tavsif |
-|---|---|---|---|
-| `version` | `string` | Ha | Versiya raqami |
-| `file` | `file` | Ha | APK fayl |
-| `minAndroid` | `string` | Yo'q | Minimal Android versiyasi (birlamchi: `8.0`) |
-| `changelog` | `string` | Yo'q | O'zgarishlar tarixi |
+**Xatoliklar:** `409` — Versiya allaqachon mavjud
 
 ---
 
-### Versiyani yangilash
+### 7.2. Versiya yangilash
 
 ```
 PUT /appstore/admin/apps/{app_id}/versions/{version}
 ```
 
-**Header:** `Authorization: Bearer <token>`
-
-**Request:** `multipart/form-data`
-
-| Maydon | Turi | Tavsif |
-|---|---|---|
-| `changelog` | `string` | O'zgarishlar tarixi |
-| `minAndroid` | `string` | Minimal Android versiyasi |
-| `file` | `file` | Yangi APK (ixtiyoriy) |
+| Parametr | Turi | Majburiy | Tavsif |
+|----------|------|----------|--------|
+| **Form Data** ||||
+| changelog | string | Yo'q | |
+| minAndroid | string | Yo'q | |
+| file | file | Yo'q | Yangi APK |
 
 ---
 
-### Versiyani o'chirish
+### 7.3. Versiya o'chirish
 
 ```
 DELETE /appstore/admin/apps/{app_id}/versions/{version}
 ```
 
-**Header:** `Authorization: Bearer <token>`
-
 ---
 
-## Admin: Skrinshotlar
+## 8. Admin — Skrinshotlar
 
-### Skrinshot yuklash
+### 8.1. Skrinshot yuklash
 
 ```
 POST /appstore/admin/apps/{app_id}/screenshots
 ```
 
-**Header:** `Authorization: Bearer <token>`
+| Parametr | Turi | Majburiy | Tavsif |
+|----------|------|----------|--------|
+| **Form Data** ||||
+| screenshots | file(s) | Ha | Bir yoki bir nechta rasm |
 
-**Request:** `multipart/form-data` - `screenshots` maydoni (bir yoki bir nechta fayl)
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "screenshots": ["url1", "url2"],
+    "added": 2
+  }
+}
+```
 
 ---
 
-### Skrinshot o'chirish
+### 8.2. Skrinshot o'chirish
 
 ```
 DELETE /appstore/admin/apps/{app_id}/screenshots/{index}
 ```
 
-**Header:** `Authorization: Bearer <token>`
+Indeks bo'yicha skrinshotni o'chiradi (0 dan boshlanadi).
 
 ---
 
-## Admin: Foydalanuvchilar (Admin only)
+## 9. Admin — Foydalanuvchilar
 
-### Foydalanuvchilar ro'yxati
+**Ruxsat:** faqat `admin` roli
+
+### 9.1. Foydalanuvchilar ro'yxati
 
 ```
-GET /appstore/admin/users
+GET /appstore/admin/users?page=1&limit=20&role=&q=
 ```
 
-**Header:** `Authorization: Bearer <token>`
-
-| Parametr | Tavsif |
-|---|---|
-| `q` | Qidirish matni |
+| Parametr | Turi | Majburiy | Tavsif |
+|----------|------|----------|--------|
+| page | int | Yo'q | |
+| limit | int | Yo'q | |
+| role | string | Yo'q | `admin` yoki `publisher` |
+| q | string | Yo'q | Qidiruv |
 
 ---
 
-### Foydalanuvchi tafsilotlari
+### 9.2. Bitta foydalanuvchi
 
 ```
 GET /appstore/admin/users/{user_id}
 ```
 
-**Header:** `Authorization: Bearer <token>`
-
 ---
 
-### Foydalanuvchi yaratish
+### 9.3. Foydalanuvchi yaratish
 
 ```
 POST /appstore/admin/users
 ```
 
-**Header:** `Authorization: Bearer <token>`
+| Parametr | Turi | Majburiy | Tavsif |
+|----------|------|----------|--------|
+| **Body (JSON)** ||||
+| username | string | Ha | |
+| email | string | Ha | |
+| password | string | Ha | |
+| displayName | string | Ha | |
+| role | string | Ha | `admin` yoki `publisher` |
 
-**Request body:**
-```json
-{
-  "username": "publisher1",
-  "email": "pub@example.com",
-  "password": "secret123",
-  "displayName": "Publisher One",
-  "role": "publisher"
-}
-```
-
-| Maydon | Turi | Talab | Tavsif |
-|---|---|---|---|
-| `username` | `string` | Ha | Foydalanuvchi nomi |
-| `email` | `string` | Ha | Email |
-| `password` | `string` | Ha | Parol |
-| `displayName` | `string` | Yo'q | Ko'rinadigan nom |
-| `role` | `string` | Ha | Rol: `admin` yoki `publisher` |
+**Xatoliklar:** `409` — Username yoki email band
 
 ---
 
-### Foydalanuvchini yangilash
+### 9.4. Foydalanuvchi yangilash
 
 ```
 PUT /appstore/admin/users/{user_id}
 ```
 
-**Header:** `Authorization: Bearer <token>`
-
-**Request body:** Ixtiyoriy maydonlar: `displayName`, `email`, `role`, `password`
+| Parametr | Turi | Majburiy | Tavsif |
+|----------|------|----------|--------|
+| **Body (JSON)** ||||
+| displayName | string | Yo'q | |
+| email | string | Yo'q | |
+| role | string | Yo'q | |
+| password | string | Yo'q | |
 
 ---
 
-### Foydalanuvchini o'chirish
+### 9.5. Foydalanuvchi o'chirish
 
 ```
 DELETE /appstore/admin/users/{user_id}
 ```
 
-**Header:** `Authorization: Bearer <token>`
+O'zini o'chira olmaydi.
 
 ---
 
-## Admin: Ma'lumotlarni eksport/import
+## 10. Admin — Dashboard
 
-### Eksport
+```
+GET /appstore/admin/dashboard
+```
+
+`admin` roli uchun to'liq tizim statistikasi, `publisher` roli uchun faqat o'z ilovalari.
+
+---
+
+## 11. Yuklash (Upload)
+
+```
+POST /appstore/upload/icon     — Ikonka (max 512KB)
+POST /appstore/upload/screenshot — Skrinshot (max 2MB)
+POST /appstore/upload/apk      — APK (max 500MB)
+POST /appstore/upload/avatar   — Avatar (max 512KB)
+```
+
+Har biri `file` form-data qabul qiladi. JWT auth talab qilinadi.
+
+---
+
+## 12. Admin — Ma'lumotlar Eksport/Import
+
+### 12.1. Eksport (ZIP)
 
 ```
 GET /appstore/admin/data/export
 ```
 
-**Header:** `Authorization: Bearer <token>`
+| Ruxsat: faqat admin ||
 
-Barcha ma'lumotlarni ZIP arxivga eksport qiladi.
+AppStore'dagi barcha ma'lumotlarni va fayllarni ZIP arxiv sifatida yuklab olish.
 
-**Response:**
+**Response (200):**
 ```json
 {
   "success": true,
@@ -877,48 +589,76 @@ Barcha ma'lumotlarni ZIP arxivga eksport qiladi.
 
 ---
 
-### Import
+### 12.2. Import (ZIP)
 
 ```
 POST /appstore/admin/data/import
 ```
 
-**Header:** `Authorization: Bearer <token>`
+| Ruxsat: faqat admin ||
 
-**Request:** `multipart/form-data` - `file` (ZIP fayl)
+| Parametr | Turi | Majburiy | Tavsif |
+|----------|------|----------|--------|
+| **Form Data** ||||
+| file | file | Ha | `.zip` arxiv |
 
-Mavjud ma'lumotlarni yuklangan ZIP bilan almashtiradi.
+Joriy ma'lumotlarni ZIP arxiv bilan almashtiradi.
 
 ---
 
-### Tozalash
+### 12.3. Tozalash (Reset)
 
 ```
 POST /appstore/admin/data/clear
 ```
 
-**Header:** `Authorization: Bearer <token>`
+| Ruxsat: faqat admin ||
 
-Barcha ma'lumotlarni o'chirib, boshlang'ich holatga qaytaradi (`admin/admin123` admin foydalanuvchisi qayta yaratiladi).
+Barcha AppStore ma'lumotlarini o'chirib, faqat admin foydalanuvchini qayta tiklaydi (`admin`/`admin123`).
 
 ---
 
-## Autentifikatsiya turlari
+## 13. Health Check
 
-| Tur | Usul |
-|---|---|
-| JWT Token | `Authorization: Bearer <token>` header |
-| Refresh Token | httpOnly cookie yoki query parametr |
-| Rol tekshiruvi | `require_admin` middleware (Admin huquq talab qiladigan endpointlar) |
+```
+GET /appstore/health
+```
 
-## Ma'lumotlar saqlash
+---
 
-Ma'lumotlar JSON fayllarda saqlanadi (`apps/app_store/data/`):
+## AppStore ilova obyekti namunasi
 
-| Fayl | Tavsif |
-|---|---|
-| `users.json` | Foydalanuvchilar |
-| `apps.json` | Ilovalar |
-| `versions.json` | Versiyalar |
+```json
+{
+  "id": "app-abc123",
+  "name": "MXAgent",
+  "developer": "MX Soft",
+  "shortDescription": "Agentlar uchun mobil ilova",
+  "description": "To'liq tavsif...",
+  "category": "business",
+  "tags": ["agent", "sales", "crm"],
+  "icon": "/appstore/uploads/icons/app-abc123.png",
+  "screenshots": [
+    "/appstore/uploads/screenshots/app-abc123-1.png",
+    "/appstore/uploads/screenshots/app-abc123-2.png"
+  ],
+  "published": true,
+  "featured": false,
+  "createdBy": "user-admin-001",
+  "createdAt": "2024-01-01",
+  "updatedAt": "2024-06-01"
+}
+```
 
-Yuklangan fayllar: `uploads/icons/`, `uploads/screenshots/`, `uploads/apks/`, `uploads/avatars/`
+## AppStore versiya obyekti namunasi
+
+```json
+{
+  "version": "1.2.3",
+  "fileSize": 25165824,
+  "minAndroid": "8.0",
+  "changelog": "Xatoliklar tuzatildi",
+  "filePath": "apps/app-abc123/1.2.3.apk",
+  "createdAt": "2024-06-01"
+}
+```

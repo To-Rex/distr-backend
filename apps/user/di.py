@@ -79,3 +79,20 @@ async def get_current_user_by_token(
         token = request.headers.get("X-API-KEY")
     user = await get_current_user(token, session)
     return user
+
+
+async def get_optional_current_user(
+        bearer_credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
+        request: Request,
+        session: Annotated[AsyncSession, Depends(get_async_session)]
+) -> User | None:
+    token = bearer_credentials.credentials if bearer_credentials else None
+    if not token:
+        token = request.headers.get("X-API-KEY")
+    if not token:
+        return None
+    try:
+        user = await get_current_user(token, session)
+        return user
+    except HTTPException:
+        return None

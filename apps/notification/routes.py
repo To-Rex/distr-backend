@@ -28,7 +28,7 @@ from apps.notification.schemas import (
     UnreadCountResponse,
 )
 from apps.user.models import User, UserType
-from apps.user.di import get_current_user_by_token
+from apps.user.di import get_current_user_by_token, get_optional_current_user
 from apps.company.models import Company, SecurityKey
 from config.database import get_async_session
 
@@ -37,16 +37,35 @@ router = APIRouter(
     tags=["Notifications"],
 )
 
+
+def _check_notification_access(notification: Notification, current_user: User) -> None:
+    if current_user.user_type in (UserType.MANAGER, UserType.SUPERVISOR):
+        if notification.company_id != current_user.company_id:
+            raise HTTPException(status_code=403, detail="Siz faqat o'z kompaniyangiz bildirishnomalarini ko'ra olasiz")
+
+
+def _scope_to_company(current_user: User) -> int | None:
+    if current_user.user_type in (UserType.MANAGER, UserType.SUPERVISOR):
+        if not current_user.company_id:
+            raise HTTPException(status_code=403, detail="Sizda kompaniya biriktirilmagan")
+        return current_user.company_id
+    return None
+
+
 # --- CREATE & LIST ---
 
 
 @router.post("/create", response_model=NotificationResponse, status_code=status.HTTP_201_CREATED)
 async def create_notification(
     notification_data: NotificationCreate,
-    session: AsyncSession = Depends(get_async_session)
+    session: AsyncSession = Depends(get_async_session),
+    current_user: User | None = Depends(get_optional_current_user),
 ):
     try:
         effective_company_id = notification_data.company_id
+
+        user_company_id = current_user.company_id if current_user else None
+        user_role = current_user.user_type if current_user else None
 
         # 1. Validate Security Key
         if notification_data.security_key:
@@ -62,7 +81,19 @@ async def create_notification(
                 raise HTTPException(
                     status_code=400, detail="Security key mismatch for company")
 
-        # 2. Validate Company
+        # 2. MANAGER / SUPERVISOR scoping
+        if user_role in (UserType.MANAGER, UserType.SUPERVISOR):
+            if not user_company_id:
+                raise HTTPException(status_code=403, detail="Sizda kompaniya biriktirilmagan")
+            if notification_data.security_key and effective_company_id != user_company_id:
+                raise HTTPException(status_code=403, detail="Siz faqat o'z kompaniyangizga bildirishnoma jo'nata olasiz")
+            effective_company_id = user_company_id
+        elif user_role in (UserType.SUPERADMIN, UserType.ADMIN):
+            pass
+        elif user_role is not None:
+            raise HTTPException(status_code=403, detail="Sizda bildirishnoma jo'natish huquqi yo'q")
+
+        # 3. Validate Company
         if effective_company_id is not None:
             res = await session.execute(select(Company).where(Company.id == effective_company_id))
             if not res.scalar_one_or_none():
@@ -299,6 +330,9 @@ async def list_notifications(
     session: AsyncSession = Depends(get_async_session),
     current_user: User = Depends(get_current_user_by_token),
 ):
+    scoped_cid = _scope_to_company(current_user)
+    if scoped_cid is not None:
+        company_id = scoped_cid
 
     query = (
         select(Notification)
@@ -372,6 +406,7 @@ async def get_notification(
     notification = result.scalar_one_or_none()
     if not notification:
         raise HTTPException(status_code=404, detail="Notification not found")
+    _check_notification_access(notification, current_user)
     return notification
 
 
@@ -385,6 +420,7 @@ async def delete_notification(
     notification = result.scalar_one_or_none()
     if not notification:
         raise HTTPException(status_code=404, detail="Notification not found")
+    _check_notification_access(notification, current_user)
     await session.delete(notification)
     await session.commit()
 
@@ -397,6 +433,9 @@ async def get_company_notifications(
     session: AsyncSession = Depends(get_async_session),
     current_user: User = Depends(get_current_user_by_token),
 ):
+    scoped_cid = _scope_to_company(current_user)
+    if scoped_cid is not None:
+        company_id = scoped_cid
     query = select(Notification).where(Notification.company_id ==
                                        company_id).order_by(Notification.created_at.desc())
     result = await session.execute(query)
