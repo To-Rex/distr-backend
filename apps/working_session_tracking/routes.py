@@ -9,6 +9,7 @@ from apps.working_session_tracking.schemas import (
     WorkingSessionCreate,
     WorkingSessionResponse,
     WorkerSessionResponse,
+    WorkStartTimeResponse,
 )
 from apps.user.models import User
 from apps.user.di import get_current_user_by_token
@@ -144,3 +145,46 @@ async def delete_working_session(
 
     await session.delete(working_session)
     await session.commit()
+
+
+@router.get("/user/{user_id}/start-time", response_model=WorkStartTimeResponse)
+async def get_user_work_start_time(
+    user_id: int,
+    session: AsyncSession = Depends(get_async_session),
+    current_user: User = Depends(get_current_user_by_token),
+):
+    result = await session.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    today = date.today()
+    yesterday = today - timedelta(days=1)
+
+    result = await session.execute(
+        select(func.min(WorkingSession.session))
+        .where(
+            WorkingSession.user_id == user_id,
+            func.date(WorkingSession.session) == today,
+        )
+    )
+    today_start = result.scalar()
+
+    if today_start is not None:
+        return WorkStartTimeResponse(session=today_start, is_yesterday=False)
+
+    result = await session.execute(
+        select(func.min(WorkingSession.session))
+        .where(
+            WorkingSession.user_id == user_id,
+            func.date(WorkingSession.session) == yesterday,
+        )
+    )
+    yesterday_start = result.scalar()
+
+    if yesterday_start is not None:
+        return WorkStartTimeResponse(session=yesterday_start, is_yesterday=True)
+
+    raise HTTPException(
+        status_code=404, detail="No working session found for today or yesterday"
+    )

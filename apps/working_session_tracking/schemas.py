@@ -27,3 +27,8 @@ class WorkerSessionResponse(BaseModel):
     user: UserResponse
     session: WorkingSessionResponse
     model_config = ConfigDict(from_attributes=True)
+
+
+class WorkStartTimeResponse(BaseModel):
+    session: datetime
+    is_yesterday: bool
