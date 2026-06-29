@@ -10,7 +10,7 @@ from fastapi import APIRouter, Query, Depends, HTTPException
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from apps.location.models import Location
-from apps.location.schemas import LocationRead, LocationCreate, LocationUpdate
+from apps.location.schemas import LocationRead, LocationCreate, LocationUpdate, LocationBatchRequest
 from apps.user.models import User, UserType
 from config.database import get_async_session, async_session_maker
 from managers.c2_manager import c2_manager
@@ -39,6 +39,37 @@ async def create_location(
     await session.commit()
     await session.refresh(new_location)
     return new_location
+
+
+@router.post("/batch", status_code=201)
+async def batch_create_locations(
+    batch_data: LocationBatchRequest,
+    current_user: User = Depends(get_current_user_by_token),
+):
+    allowed_roles = ["AGENT", "DELIVERER", "MERCHANDISER", "SUPERVISOR", "VENDOR_AGENT"]
+    if current_user.user_type.value not in allowed_roles:
+        raise HTTPException(status_code=403, detail="Only field agents can upload locations")
+
+    count = 0
+    for item in batch_data.locations:
+        loc_dict = item.model_dump()
+        data = {
+            "action": "update_location",
+            "location": {
+                "latitude": loc_dict["latitude"],
+                "longitude": loc_dict["longitude"],
+                "device_name": loc_dict.get("device_name") or "Unknown",
+            },
+            "speed": loc_dict.get("speed", 0.0),
+            "bearing": loc_dict.get("bearing", 0.0),
+            "accuracy": loc_dict.get("accuracy", 0.0),
+            "altitude": loc_dict.get("altitude", 0.0),
+            "timestamp": loc_dict.get("timestamp") or datetime.now().isoformat(),
+        }
+        await c2_manager.update_location(current_user.id, data)
+        count += 1
+
+    return {"status": "success", "count": count}
 
 
 @router.get("/", response_model=List[LocationRead])
@@ -150,7 +181,7 @@ async def unified_websocket_handler(
 
     await c2_manager.connect(user, websocket)
 
-    HEARTBEAT_INTERVAL = 30.0
+    HEARTBEAT_INTERVAL = 40.0
 
     try:
         while True:
