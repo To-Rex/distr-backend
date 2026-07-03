@@ -1,5 +1,25 @@
 [
   {
+    "id": 1783104858256,
+    "action": "user_updated_by_admin",
+    "message": {
+      "uz": "Foydalanuvchi ma'lumotlari yangilandi bobobek_midgo",
+      "ru": "Данные пользователя обновлены bobobek_midgo",
+      "en": "User info updated bobobek_midgo"
+    },
+    "created_at": "2026-07-03T18:54:18.256760+00:00"
+  },
+  {
+    "id": 1783104616745,
+    "action": "user_created_by_admin",
+    "message": {
+      "uz": "Yangi foydalanuvchi qo'shildi bobobek_midgo",
+      "ru": "Новый пользователь добавлен bobobek_midgo",
+      "en": "New user added bobobek_midgo"
+    },
+    "created_at": "2026-07-03T18:50:16.745440+00:00"
+  },
+  {
     "id": 1781725081850,
     "action": "user_login",
     "message": {
@@ -38,25 +58,5 @@
       "en": "User logged in admin"
     },
     "created_at": "2026-06-05T08:52:19.463842+00:00"
-  },
-  {
-    "id": 1780649125140,
-    "action": "user_login",
-    "message": {
-      "uz": "Foydalanuvchi tizimga kirdi admin",
-      "ru": "Пользователь вошел в систему admin",
-      "en": "User logged in admin"
-    },
-    "created_at": "2026-06-05T08:45:25.140261+00:00"
-  },
-  {
-    "id": 1780647809264,
-    "action": "user_login",
-    "message": {
-      "uz": "Foydalanuvchi tizimga kirdi admin",
-      "ru": "Пользователь вошел в систему admin",
-      "en": "User logged in admin"
-    },
-    "created_at": "2026-06-05T08:23:29.264611+00:00"
   }
 ]

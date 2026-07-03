@@ -77,7 +77,7 @@ class User(Base):
         Integer, nullable=True)
 
     user_1c_login: Mapped[Optional[str]] = mapped_column(
-        String, unique=True, nullable=True)
+        String, nullable=True)
     user_1c_password: Mapped[Optional[str]
                              ] = mapped_column(String, nullable=True)
 
